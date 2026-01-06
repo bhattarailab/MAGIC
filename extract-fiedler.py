@@ -87,7 +87,6 @@ class FiedlerValue:
 		# The Fiedler value is the second smallest eigenvalue (index 1)
 		# Note: Ensure graph is connected, otherwise this might be 0.
 		fiedler_value = eigenvalues[1].item()
-		breakpoint()
 		
 		return fiedler_value
 
