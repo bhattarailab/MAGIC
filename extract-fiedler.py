@@ -1,47 +1,30 @@
 import pickle
 import numpy as np
 
-text_attentions_path = "./attentions-pkl/llava-med-v1.5-mistral-7b_text_features_cache_valid.pkl"
-visual_attentions_path = "./attentions-pkl/llava-med-v1.5-mistral-7b_visual_features_cache_valid.pkl"
+from graph_utils import create_graph
 
-with open(text_attentions_path, "rb") as fp:
-	text_attentions = pickle.load(fp)
+attention_matrices_path = "/scratch/noli1/graph_hallucination_detection/results/llava-med-v1.5-mistral-7b_test"
 
-with open(visual_attentions_path, "rb") as fp:
-	visual_attentions = pickle.load(fp)
+def load_attention_matrices(sample: int, layer: int, head: int) -> (np.array, np.array):
+	"""
+		Loads and returns the attention matrices from the .npz files;
+			- text subgraph = text_subgraphs_<sample index>.npz
+			- visual subgraph = visual_subgraphs_<sample index>.npz
 
-# visual_attentions is a tuple with hallucinating and non_hallucinating features
-hallucinating_visual_attentions, non_hallucinating_visual_attentions = visual_attentions
-hallucinating_text_attentions, non_hallucinating_text_attentions = text_attentions
+		Returns, (np.array, np.array) => (visual, text)
+	"""
+	text_path = f"{attention_matrices_path}/text_subgraphs_{sample}.npz"
+	visual_path = f"{attention_matrices_path}/visual_subgraphs_{sample}.npz"
 
-assert(len(hallucinating_text_attentions) == len(hallucinating_visual_attentions))
-assert(len(non_hallucinating_text_attentions) == len(non_hallucinating_visual_attentions))
+	text_matrices, visual_matrices = np.load(text_path), np.load(visual_path)
 
-print(f"Loaded {len(hallucinating_visual_attentions)} hallucinating and {len(non_hallucinating_visual_attentions)} samples respectively")
+	key = f"layer_{layer}_head_{head}"
+	text_matrix, visual_matrix = text_matrices[key], visual_matrices[key]
+	
+	return text_matrix, visual_matrix	
 
-index = 0
-hallucinating_text_attention, hallucinating_visual_attention = hallucinating_text_attentions[index], hallucinating_visual_attentions[index]
+sample_index = 0
+layer, head = 0, 0
 
-breakpoint()
-def process_head(mat, k=10):
-    """Compute top k eigenvalues of Laplacian matrix."""
-    A = np.array(mat).astype(np.float32)
-    num_answer_tokens, num_visual_tokens = A.shape
-    #k=2
-    G = nx.Graph()
-    G.add_nodes_from(range(num_answer_tokens), bipartite=0)
-    G.add_nodes_from(range(num_answer_tokens, num_answer_tokens + num_visual_tokens), bipartite=1)
-    for i in range(num_answer_tokens):
-        for j in range(num_visual_tokens):
-            weight = float(A[i, j])  
-            G.add_edge(i, num_answer_tokens + j, weight=weight)
-    
-    L = nx.laplacian_matrix(G)
-    
-    try:
-        eigenvalues = eigsh(L, k=min(k, L.shape[0]-1), which='LA', return_eigenvectors=False)
-        return eigenvalues[::-1]
-    except Exception as e:
-        print(f"Error: {e}")
-        print(f"Matrix: {mat.shape}")
-        return 0
+text_matrix, visual_matrix = load_attention_matrices(sample_index, layer, head)
+text_graph, visual_graph = create_graph(text_matrix, "text"), create_graph(visual_matrix, "visual")
