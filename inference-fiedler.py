@@ -20,33 +20,33 @@ with open(metadata_fidler_path, "rb") as fp:
 # 3. Compute the difference of divergence score in hallucinated and non-hallucianted samples
 # 4. Plot the visualization in a scatter plot
 # 5. Compute the acuracy
-def compute_divergence_of_head(fiedlers):
+def compute_fiedler_difference(fiedlers):
 	return fiedlers["text"]-fiedlers["visual"]
 	# return fiedlers["visual"]
 
-def compute_divergence_across_samples(samples):
-	cumulative_divergence_scores = dict()
+def compute_normalized_fiedler_difference(samples):
+	cumulative_fiedler_differences = dict()
 
 	# for each layer's head compute the difference of divergence score
 	for i_layer in range(32):
 		for i_head in range(32):
 			key = f"layer_{i_layer}_head_{i_head}"
-			total_head_divergence = 0
+			total_head_fiedler_difference = 0
 			
 			# for all the given set of samples compute the divergence score for that head
 			for sample in samples:
-				divergence = compute_divergence_of_head(sample["fiedlers"][key])
-				total_head_divergence += divergence
+				fiedler_difference = compute_fiedler_difference(sample["fiedlers"][key])
+				total_head_fiedler_difference += fiedler_difference
 
-			cumulative_divergence_scores[key] = total_head_divergence
+			cumulative_fiedler_differences[key] = total_head_fiedler_difference/len(samples)
 
-	return dict_to_matrix(cumulative_divergence_scores)
+	return dict_to_matrix(cumulative_fiedler_differences)
 
-def dict_to_matrix(dictionary):
+def dict_to_matrix(dictionary, n_layers=32, n_heads=32):
 	score_array = []
-	for i_layer in range(32):
+	for i_layer in range(n_layers):
 		ith_layer_array = []
-		for i_head in range(32):
+		for i_head in range(n_heads):
 			key= f"layer_{i_layer}_head_{i_head}"
 			ith_layer_array.append(dictionary[key])
 
@@ -54,46 +54,33 @@ def dict_to_matrix(dictionary):
 
 	return np.array(score_array)
 
-hallucinating_samples = [m for m in metadata_with_fiedler if m["is_hallucinating"]]
-non_hallucinating_samples = [m for m in metadata_with_fiedler if not m["is_hallucinating"]]
+def get_descending_matrix_indices(matrix):
+	flattened = np.argsort(matrix, axis=None)[::-1]
+	row_col_indices = np.column_stack(np.unravel_index(flattened, matrix.shape))
 
-hallucinating_divergence, non_hallucinating_divergence = compute_divergence_across_samples(hallucinating_samples), compute_divergence_across_samples(non_hallucinating_samples)
+	return row_col_indices
 
-hallucinating_divergence = hallucinating_divergence/len(hallucinating_samples)
-non_hallucinating_divergence = non_hallucinating_divergence/len(non_hallucinating_samples)
-
-aggregated_divergence = hallucinating_divergence-non_hallucinating_divergence
-
-ax = sns.heatmap(aggregated_divergence)
-plt.xlabel("heads")
-plt.ylabel("layers")
-plt.savefig("./outputs/aggregated_divergence.png")
-
-
-def select_heads(aggregated_divergence):
-	n_heads_max = 10
-
-	# flattening the aggregated_divergence matrix to sort in descending order
-	flattened_aggregare_divergence = np.argsort(aggregated_divergence, axis=None)[::-1]
-	row_col_indices = np.column_stack(np.unravel_index(flattened_aggregare_divergence, aggregated_divergence.shape))
+def select_heads(divergece_matrix, validation_samples, max_heads=10):
+	n_heads_max = max_heads
+	descending_divergence_heads = get_descending_matrix_indices(divergece_matrix)
 
 	N, N_optimal = 1, 1
 	heads = list()
 
-	p_s = {s: 0 for s in range(len(metadata_with_fiedler))}
+	p_s = {s: 0 for s in range(len(validation_samples))}
 	auc_max = 0.0
 
 	while N<=n_heads_max:
-		heads.append(row_col_indices[N-1])
+		heads.append(descending_divergence_heads[N-1])
 
-		for i, s in enumerate(metadata_with_fiedler):
+		for i, s in enumerate(validation_samples):
 			l, h = heads[-1]
 			l, h = int(l), int(h)
 
 			fiedlers = s["fiedlers"][f"layer_{l}_head_{h}"]
-			p_s[i] = (N-1)/N * p_s[i] + 1/N * compute_divergence_of_head(fiedlers)
+			p_s[i] = (N-1)/N * p_s[i] + 1/N * compute_fiedler_difference(fiedlers)
 
-		y_s = [s["is_hallucinating"] for s in metadata_with_fiedler]
+		y_s = [s["is_hallucinating"] for s in validation_samples]
 		auc = roc_auc_score(y_s, list(p_s.values()))
 
 		if auc > auc_max:
@@ -101,7 +88,22 @@ def select_heads(aggregated_divergence):
 			N_optimal = N
 
 		N = N+1
-	
-	return row_col_indices[:N_optimal]
 
-selected_heads = select_heads(aggregated_divergence)
+	print(f"Total {N_optimal} heads selected with maximum AUC of {auc_max}")
+	
+	return descending_divergence_heads[:N_optimal]
+
+hallucinating_samples = [m for m in metadata_with_fiedler if m["is_hallucinating"]]
+non_hallucinating_samples = [m for m in metadata_with_fiedler if not m["is_hallucinating"]]
+
+hallucinating_fiedlers_diff = compute_normalized_fiedler_difference(hallucinating_samples)
+non_hallucinating_fiedlers_diff = compute_normalized_fiedler_difference(non_hallucinating_samples)
+
+divergence_scores = hallucinating_fiedlers_diff-non_hallucinating_fiedlers_diff
+
+ax = sns.heatmap(divergence_scores)
+plt.xlabel("heads")
+plt.ylabel("layers")
+plt.savefig("./outputs/divergence_scores.png")
+
+selected_heads = select_heads(divergence_scores, metadata_with_fiedler)
