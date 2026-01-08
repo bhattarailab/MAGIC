@@ -93,6 +93,25 @@ def select_heads(divergece_matrix, validation_samples, max_heads=10):
 	
 	return descending_divergence_heads[:N_optimal]
 
+def prediction(heads, samples):
+	samples_fiedlers_diff = compute_normalized_fiedler_difference(hallucinating_samples)
+	y_s = [s["is_hallucinating"] for s in samples]
+	n_heads = len(heads)
+
+	p_s = []
+	for s in samples:
+		fiedler_diff = 0
+		for (l, h) in heads:
+			key = f"layer_{l}_head_{h}"
+			fiedler_diff += compute_fiedler_difference(s["fiedlers"][key])
+
+		p_s.append(fiedler_diff/n_heads)
+
+	auc_score = roc_auc_score(y_s, p_s)
+	print(f"AUC score = {auc_score}")
+
+	breakpoint()
+
 hallucinating_samples = [m for m in metadata_with_fiedler if m["is_hallucinating"]]
 non_hallucinating_samples = [m for m in metadata_with_fiedler if not m["is_hallucinating"]]
 
@@ -107,3 +126,4 @@ plt.ylabel("layers")
 plt.savefig("./outputs/divergence_scores.png")
 
 selected_heads = select_heads(divergence_scores, metadata_with_fiedler)
+prediction(selected_heads, metadata_with_fiedler)
