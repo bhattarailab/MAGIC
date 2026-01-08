@@ -3,36 +3,8 @@ import numpy as np
 import torch
 
 from graph_utils import create_graph, draw_graph
-import networkx as nx
 
-attention_matrices_path = "/scratch/noli1/graph_hallucination_detection/results/llava-med-v1.5-mistral-7b_test"
-
-def load_attention_matrices(sample: int, layer: int, head: int) -> (np.array, np.array):
-	"""
-		Loads and returns the attention matrices from the .npz files;
-			- text subgraph = text_subgraphs_<sample index>.npz
-			- visual subgraph = visual_subgraphs_<sample index>.npz
-
-		Returns, (np.array, np.array) => (visual, text)
-	"""
-	text_path = f"{attention_matrices_path}/text_subgraphs_{sample}.npz"
-	visual_path = f"{attention_matrices_path}/visual_subgraphs_{sample}.npz"
-
-	text_matrices, visual_matrices = np.load(text_path), np.load(visual_path)
-
-	key = f"layer_{layer}_head_{head}"
-	text_matrix, visual_matrix = text_matrices[key], visual_matrices[key]
-	text_matrix, visual_matrix = text_matrix.astype(np.float32), visual_matrix.astype(np.float32)
-	
-	return text_matrix, visual_matrix	
-
-sample_index = 0
-layer, head = 0, 0
-
-text_matrix, visual_matrix = load_attention_matrices(sample_index, layer, head)
-text_graph, visual_graph = create_graph(text_matrix, "text"), create_graph(visual_matrix, "visual")
-
-# text_feidler_vector, visual_fiedler_vector = nx.fiedler_vector(text_graph, normalized=True, seed=0), nx.fielder_vector(visual_graph, normalized=True, seed=0)
+import json
 
 class FiedlerValue:
 	seed = 0
@@ -90,4 +62,40 @@ class FiedlerValue:
 		
 		return fiedler_value
 
-print(FiedlerValue.using_torch(text_matrix))
+attention_matrices_path = "/scratch/noli1/graph_hallucination_detection/results/llava-med-v1.5-mistral-7b_test"
+metadata_path = "/work/FAC/HEC/DESI/yshresth/aim/noli1/graph-fiedler/attentions/metadata.pkl"
+
+with open(metadata_path, "rb") as fp:
+	metadata = pickle.load(fp)
+
+for i, meta in enumerate(metadata):
+	print(f"\tExtracting fiedler value for {i+1}th sample")
+	visual_path, text_path = meta["visual_subgraphs_file"], meta["text_subgraphs_file"]
+	
+	# contains all the text and visual attention submatrices for all layers and heads
+	text_matrices, visual_matrices = np.load(text_path), np.load(visual_path)
+
+	# stores the fiedler value with key `layer_<layer>_head_<head>`
+	fiedler_value_dict = dict()
+
+	n_layers, n_heads = 32, 32
+	for layer in range(n_layers):
+		for head in range(n_heads):
+			key = f"layer_{layer}_head_{head}"
+			text_matrix, visual_matrix = text_matrices[key], visual_matrices[key]
+
+			# float 32 to prevent the scipy errors
+			text_matrix, visual_matrix = text_matrix.astype(np.float32), visual_matrix.astype(np.float32)
+			
+			# extracting the fiedler value for text and visual
+			text_fiedler, visual_fiedler = FiedlerValue.using_torch(text_matrix), FiedlerValue.using_torch(visual_matrix)
+
+			fiedler_value_dict[key] = {
+				"text": text_fiedler,
+				"visual": visual_fiedler,
+			}
+		
+	metadata[i]["fiedlers"] = fiedler_value_dict
+
+with open("./outputs/fiedler_values.pkl", "wb") as fp:
+	pickle.dump(metadata, fp)
