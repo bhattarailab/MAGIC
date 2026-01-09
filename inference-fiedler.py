@@ -5,12 +5,17 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score
 
-metadata_fidler_path = "/work/FAC/HEC/DESI/yshresth/aim/noli1/graph-fiedler/outputs/fiedler_values.pkl"
+# 200 samples for the train
+train_fidler_path = "/work/FAC/HEC/DESI/yshresth/aim/noli1/graph-fiedler/outputs/fiedler_values_train.pkl"
+test_fidler_path = "/work/FAC/HEC/DESI/yshresth/aim/noli1/graph-fiedler/outputs/fiedler_values_test.pkl"
 
-with open(metadata_fidler_path, "rb") as fp:
+with open(train_fidler_path, "rb") as fp:
 	# each sample contains "fiedlers" with dict of keys "layer_0_head_0" with "text" and "visual"
-	metadata_with_fiedler = pickle.load(fp)
+	train_fiedler = pickle.load(fp)
 
+with open(test_fidler_path, "rb") as fp:
+	# each sample contains "fiedlers" with dict of keys "layer_0_head_0" with "text" and "visual"
+	test_fiedler = pickle.load(fp)
 
 # Task: for each layer in each head compute the divegence score
 # 1. Divide into vision-aware and text-aware samples.
@@ -23,6 +28,8 @@ with open(metadata_fidler_path, "rb") as fp:
 def compute_fiedler_difference(fiedlers):
 	return fiedlers["text"]-fiedlers["visual"]
 	# return fiedlers["visual"]
+	# return fiedlers["text"]
+
 
 def compute_normalized_fiedler_difference(samples):
 	cumulative_fiedler_differences = dict()
@@ -94,7 +101,6 @@ def select_heads(divergece_matrix, validation_samples, max_heads=10):
 	return descending_divergence_heads[:N_optimal]
 
 def prediction(heads, samples):
-	samples_fiedlers_diff = compute_normalized_fiedler_difference(hallucinating_samples)
 	y_s = [s["is_hallucinating"] for s in samples]
 	n_heads = len(heads)
 
@@ -107,23 +113,30 @@ def prediction(heads, samples):
 
 		p_s.append(fiedler_diff/n_heads)
 
+	plt.scatter(p_s, y_s)
+	plt.legend()
+	plt.savefig("./outputs/scatter.png")
+
 	auc_score = roc_auc_score(y_s, p_s)
 	print(f"AUC score = {auc_score}")
 
-	breakpoint()
-
-hallucinating_samples = [m for m in metadata_with_fiedler if m["is_hallucinating"]]
-non_hallucinating_samples = [m for m in metadata_with_fiedler if not m["is_hallucinating"]]
+# for the train sets; COmputing the heads
+hallucinating_samples = [m for m in train_fiedler if m["is_hallucinating"]]
+non_hallucinating_samples = [m for m in train_fiedler if not m["is_hallucinating"]]
+print(f"Total {len(hallucinating_samples)} and {len(non_hallucinating_samples)} of hallucinating and non-hallucinating samples.")
 
 hallucinating_fiedlers_diff = compute_normalized_fiedler_difference(hallucinating_samples)
 non_hallucinating_fiedlers_diff = compute_normalized_fiedler_difference(non_hallucinating_samples)
 
 divergence_scores = hallucinating_fiedlers_diff-non_hallucinating_fiedlers_diff
 
+selected_heads = select_heads(divergence_scores, train_fiedler, max_heads=10)
+
 ax = sns.heatmap(divergence_scores)
 plt.xlabel("heads")
 plt.ylabel("layers")
 plt.savefig("./outputs/divergence_scores.png")
+plt.close()
 
-selected_heads = select_heads(divergence_scores, metadata_with_fiedler)
-prediction(selected_heads, metadata_with_fiedler)
+prediction(selected_heads, test_fiedler)
+breakpoint()
