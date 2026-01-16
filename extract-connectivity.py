@@ -22,6 +22,8 @@ connectivity = get_connectivity_function(connectivity_id)
 with open(metadata_path, "rb") as fp:
 	metadata = pickle.load(fp)
 
+print(f"Total samples number of samples = {len(metadata)}\n\n")
+
 # computing the median statistics
 n_answer_tokens = np.array([np.load(m["visual_subgraphs_file"])["layer_0_head_0"].shape[0] for m in metadata]).mean()
 n_query_tokens = np.array([np.load(m["text_subgraphs_file"])["layer_0_head_0"].shape[1] for m in metadata]).mean()
