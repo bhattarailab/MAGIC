@@ -3,10 +3,10 @@ import numpy as np
 import networkx as nx
 from pathlib import Path
 from typing import Dict, Any
+import torch
 
 def compute_bipartite_mst(mat: np.ndarray) -> Dict[str, Any]:
 		A = np.asarray(mat, dtype=np.float32)
-		A = 1-A
 		num_answer_tokens, num_visual_tokens = A.shape
 		G = nx.Graph()
 		G.add_nodes_from(range(num_answer_tokens), bipartite=0)
