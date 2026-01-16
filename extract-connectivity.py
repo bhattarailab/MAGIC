@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description="Script to extract the connectivity
 parser.add_argument("--attention-path", "-a", help="Path to the attention matrices pickle file")
 parser.add_argument("--metadata-path", "-m", help="Path to the metadata pickle file")
 parser.add_argument("--connectivity", "-c", help="Type of algebraic connectivity measure to be used. See the readme.id to know the id for each connectivity measure")
-parser.add_argument("--output", "-o", help="output path for pickle file, includint the filename and extension")
+parser.add_argument("--output", "-o", help="output path for pickle file, including the filename and extension")
 
 # parsing the user input
 args = parser.parse_args()

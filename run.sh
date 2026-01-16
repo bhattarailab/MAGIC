@@ -1,0 +1,1 @@
+python extract-connectivity.py --attention-path "/scratch/noli1/graph_hallucination_detection/results/llava-med-v1.5-mistral-7b_train" --metadata-path "/scratch/noli1/graph_hallucination_detection/results/llava-med-v1.5-mistral-7b_train/metadata.pkl" --connectivity "mst" --output "./outputs/mst_train.pkl"
