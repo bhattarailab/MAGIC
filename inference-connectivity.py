@@ -9,13 +9,13 @@ parser = argparse.ArgumentParser(description="Based on connectivity select the b
 parser.add_argument("--train", help="Path to training pickle file output from extract-connectivity.py")
 parser.add_argument("--test", help="Path to testing pickle file output from extract-connectivity.py")
 parser.add_argument("--name", "-n", help="name to be given for the experiment")
-parser.add_argument("--visual-weight", "-v", help="weight for visual connectivity value", default=-1, type="number")
-parser.add_argument("--text-weight", "-t", help="weight for visual connectivity value", default=1, type="number")
+parser.add_argument("--visual-weight", "-v", help="weight for visual connectivity value", default=-1, type=float)
+parser.add_argument("--text-weight", "-t", help="weight for visual connectivity value", default=1, type=float)
 
 args = parser.parse_args()
 train_connectivity_path, test_connectivity_path = args.train, args.test
 exp_name = args.name
-visual_wt, text_wt = args.v, args.t
+visual_wt, text_wt = args.visual_weight, args.text_weight
 
 with open(train_connectivity_path, "rb") as fp:
 	# each sample contains "connectivity" with dict of keys "layer_0_head_0" with "text" and "visual"
@@ -25,8 +25,8 @@ with open(test_connectivity_path, "rb") as fp:
 	# each sample contains "connectivity" with dict of keys "layer_0_head_0" with "text" and "visual"
 	test_connectivity = pickle.load(fp)
 
-print(f"Total number of train samples = {len(train_connectivity.values())}")
-print(f"Total number of test samples = {len(test_connectivity.values())}\n")
+print(f"Total number of train samples = {len(train_connectivity)}")
+print(f"Total number of test samples = {len(test_connectivity)}\n")
 
 # for the train sets; COmputing the heads
 hallucinating_samples = [m for m in train_connectivity if m["is_hallucinating"]]

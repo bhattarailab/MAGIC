@@ -1,5 +1,7 @@
-.venv/
+.venv*/
+*.swp
 attentions/
+inputs/
 outputs/
 __pycache__/
 logs/
