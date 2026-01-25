@@ -11,7 +11,7 @@ parser.add_argument("--test", help="Path to testing pickle file output from extr
 parser.add_argument("--name", "-n", help="name to be given for the experiment", default="exp")
 parser.add_argument("--visual-weight", "-v", help="weight for visual connectivity value", default=-1, type=float)
 parser.add_argument("--text-weight", "-t", help="weight for visual connectivity value", default=1, type=float)
-parser.add_argument("--type", "-t", help="type of the conectivity mesure to be used")
+parser.add_argument("--type", help="type of the conectivity mesure to be used")
 
 args = parser.parse_args()
 train_connectivity_path, test_connectivity_path = args.train, args.test
