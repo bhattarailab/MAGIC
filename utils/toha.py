@@ -7,10 +7,10 @@ import numpy as np
 # 3. Compute the difference of divergence score in hallucinated and non-hallucianted samples
 # 4. Plot the visualization in a scatter plot
 # 5. Compute the acuracy
-def compute_connectivity_diff(connectivity, t_weight=1, v_weight=-1):
-	return t_weight*connectivity["text"]+v_weight*connectivity["visual"]
+def compute_connectivity_diff(connectivity, type, t_weight=1, v_weight=-1):
+	return t_weight*connectivity["text"][type]+v_weight*connectivity["visual"][type]
 
-def compute_normalized_connectivity_diff(samples, t_weight=1, v_weight=-1):
+def compute_normalized_connectivity_diff(samples, t_weight=1, v_weight=-1, type=None):
 	cumulative_connectivity_differences = dict()
 
 	# for each layer's head compute the difference of divergence score
@@ -21,7 +21,7 @@ def compute_normalized_connectivity_diff(samples, t_weight=1, v_weight=-1):
 			
 			# for all the given set of samples compute the divergence score for that head
 			for sample in samples:
-				connectivity_difference = compute_connectivity_diff(sample["connectivity"][key], t_weight=t_weight, v_weight=v_weight)
+				connectivity_difference = compute_connectivity_diff(sample["connectivity"][key], type, t_weight=t_weight, v_weight=v_weight)
 				total_head_connectivity_difference += connectivity_difference
 
 			cumulative_connectivity_differences[key] = total_head_connectivity_difference/len(samples)
@@ -46,7 +46,7 @@ def get_descending_matrix_indices(matrix):
 
 	return row_col_indices
 
-def select_heads(divergece_matrix, validation_samples, max_heads=10, t_weight=1, v_weight=-1):
+def select_heads(divergece_matrix, validation_samples, max_heads=10, t_weight=1, v_weight=-1, type=None):
 	n_heads_max = max_heads
 	descending_divergence_heads = get_descending_matrix_indices(divergece_matrix)
 
@@ -64,7 +64,7 @@ def select_heads(divergece_matrix, validation_samples, max_heads=10, t_weight=1,
 			l, h = int(l), int(h)
 
 			connectivity = s["connectivity"][f"layer_{l}_head_{h}"]
-			p_s[i] = (N-1)/N * p_s[i] + 1/N * compute_connectivity_diff(connectivity, t_weight=t_weight, v_weight=v_weight)
+			p_s[i] = (N-1)/N * p_s[i] + 1/N * compute_connectivity_diff(connectivity, t_weight=t_weight, v_weight=v_weight, type=type)
 
 		y_s = [s["is_hallucinating"] for s in validation_samples]
 		auc = roc_auc_score(y_s, list(p_s.values()))
@@ -79,7 +79,7 @@ def select_heads(divergece_matrix, validation_samples, max_heads=10, t_weight=1,
 	
 	return descending_divergence_heads[:N_optimal]
 
-def prediction(heads, samples, t_weight=1, v_weight=-1):
+def prediction(heads, samples, t_weight=1, v_weight=-1, type=None):
 	y_s = [s["is_hallucinating"] for s in samples]
 	n_heads = len(heads)
 
@@ -88,7 +88,7 @@ def prediction(heads, samples, t_weight=1, v_weight=-1):
 		connectivity_diff = 0
 		for (l, h) in heads:
 			key = f"layer_{l}_head_{h}"
-			connectivity_diff += compute_connectivity_diff(s["connectivity"][key], t_weight=t_weight, v_weight=v_weight)
+			connectivity_diff += compute_connectivity_diff(s["connectivity"][key], t_weight=t_weight, v_weight=v_weight, type=type)
 
 		p_s.append(connectivity_diff/n_heads)
 

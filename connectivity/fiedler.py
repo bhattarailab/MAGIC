@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 class FiedlerValue:
 	seed = 0
@@ -47,4 +48,6 @@ class FiedlerValue:
 		# Note: Ensure graph is connected, otherwise this might be 0.
 		fiedler_value = eigenvalues[1].item()
 		
-		return fiedler_value
+		return {
+			"feidlers": fiedler_value,
+		}

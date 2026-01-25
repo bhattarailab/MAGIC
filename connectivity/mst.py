@@ -23,6 +23,7 @@ def compute_bipartite_mst(mat: np.ndarray) -> Dict[str, Any]:
 						)
 		mst = nx.minimum_spanning_tree(G, weight="weight")
 		total_weight = sum(d["weight"] for _, _, d in mst.edges(data=True))
+
 		return {
 				"num_answer_tokens": num_answer_tokens,
 				"num_visual_tokens": num_visual_tokens,
@@ -39,4 +40,6 @@ def compute_bipartite_mst(mat: np.ndarray) -> Dict[str, Any]:
 		}
 
 def get_mst_normalized_wt(mat):
-	return compute_bipartite_mst(mat)["normalized_weight"]
+	return {
+		"normalized_mst": compute_bipartite_mst(mat)["normalized_weight"],
+	}
