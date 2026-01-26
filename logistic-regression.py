@@ -20,7 +20,7 @@ class FiedlersDataset(torch.utils.data.Dataset):
 		m = self.metadata[index]
 		y = torch.Tensor(1) if m["is_hallucinating"] else torch.Tensor(0)
 
-		X = torch.tensor([m["connectivity"]["text"]["fiedlers"], m["connectivity"]["text"]["fiedlers"]], dtype=torch.float32)
+		X = torch.tensor([m["connectivity"]["text"]["fiedlers"], m["connectivity"]["visual"]["fiedlers"]], dtype=torch.float32)
 
 		return X, y
 
