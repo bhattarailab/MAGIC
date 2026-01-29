@@ -21,10 +21,10 @@ def compute_bipartite_mst_fast(mat: np.ndarray) -> dict:
     mst_sym = mst_sparse + mst_sparse.T
     L_sparse = laplacian(mst_sym, normed=True)
     if n_total > 1:
-        L_torch = torch.from_numpy(L_sparse.toarray()).to("cuda")
+        L_torch = torch.from_numpy(L_sparse.toarray())
         try:
             eigvals = torch.linalg.eigh(L_torch).eigenvalues
-            fiedler_value = eigvals[1].item().cpu()
+            fiedler_value = eigvals[1].item()
         except Exception:
             fiedler_value = 0.0
     else:
@@ -44,6 +44,7 @@ def process_single_entry(entry: dict, root_path: str) -> dict:
         #t_path = os.path.join(root_path, os.path.basename(entry["text_subgraphs_file"]))
         v_path=entry["visual_subgraphs_file"]
         t_path=entry["text_subgraphs_file"]
+        
         visual_data = np.load(v_path, mmap_mode='r')
         text_data = np.load(t_path, mmap_mode='r')
 
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     TEST_IN = "/work/FAC/HEC/DESI/yshresth/aim/noli1/green/outputs/test_all_radvqa.pkl"
     TRAIN_OUT = "./outputs/feidlermst_all_train.pkl"
     TEST_OUT = "./outputs/feidlermst_all_test.pkl"
+
     N_CORES = 4
     torch.set_num_threads(1)
     print(f"Starting pipeline using {N_CORES} cores...")
