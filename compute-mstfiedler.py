@@ -40,8 +40,6 @@ def compute_bipartite_mst_fast(mat: np.ndarray) -> dict:
 def process_single_entry(entry: dict, root_path: str) -> dict:
     """Worker function to process image-text attention subgraphs."""
     try:
-        #v_path = os.path.join(root_path, os.path.basename(entry["visual_subgraphs_file"]))
-        #t_path = os.path.join(root_path, os.path.basename(entry["text_subgraphs_file"]))
         v_path=entry["visual_subgraphs_file"]
         t_path=entry["text_subgraphs_file"]
         
@@ -72,7 +70,7 @@ def run_processing_pipeline(input_path: str, output_path: str, max_workers: int)
     root_path = os.path.dirname(input_path)
     with open(input_path, "rb") as fp:
         data = pickle.load(fp)
-    chunksize = max(1, len(data) // (max_workers * 4))
+    chunksize = max(1, 4)
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         processed_data = list(tqdm(
