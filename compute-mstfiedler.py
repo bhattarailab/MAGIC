@@ -21,10 +21,10 @@ def compute_bipartite_mst_fast(mat: np.ndarray) -> dict:
     mst_sym = mst_sparse + mst_sparse.T
     L_sparse = laplacian(mst_sym)
     if n_total > 1:
-        L_torch = torch.from_numpy(L_sparse.toarray())
+        L_torch = torch.from_numpy(L_sparse.toarray()).to("cuda")
         try:
             eigvals = torch.linalg.eigh(L_torch).eigenvalues
-            fiedler_value = eigvals[1].item()
+            fiedler_value = eigvals[1].item().cpu()
         except Exception:
             fiedler_value = 0.0
     else:
