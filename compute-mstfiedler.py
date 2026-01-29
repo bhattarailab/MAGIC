@@ -19,7 +19,7 @@ def compute_bipartite_mst_fast(mat: np.ndarray) -> dict:
     mst_sparse = minimum_spanning_tree(csr_matrix(full_adj))
     total_weight = mst_sparse.sum()
     mst_sym = mst_sparse + mst_sparse.T
-    L_sparse = laplacian(mst_sym)
+    L_sparse = laplacian(mst_sym, normed=True)
     if n_total > 1:
         L_torch = torch.from_numpy(L_sparse.toarray()).to("cuda")
         try:
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     TEST_IN = "/work/FAC/HEC/DESI/yshresth/aim/noli1/green/outputs/test_all_radvqa.pkl"
     TRAIN_OUT = "./outputs/feidlermst_all_train.pkl"
     TEST_OUT = "./outputs/feidlermst_all_test.pkl"
-    N_CORES = max(1, os.cpu_count() - 2) 
+    N_CORES = 4
     torch.set_num_threads(1)
     print(f"Starting pipeline using {N_CORES} cores...")
     run_processing_pipeline(TRAIN_IN, TRAIN_OUT, max_workers=N_CORES)
