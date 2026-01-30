@@ -3,8 +3,8 @@ import pickle
 from sklearn.metrics import roc_auc_score
 
 device = "cuda"
-train_connectivity_path = ""
-test_connectivity_path = ""
+train_connectivity_path = "./outputs/feidlermst_all_train_nonormalized.pkl"
+test_connectivity_path = "./outputs/feidlermst_all_test_nonormalized.pkl"
 
 class FiedlersDataset(torch.utils.data.Dataset):
 	def __init__(self, path):
@@ -20,7 +20,7 @@ class FiedlersDataset(torch.utils.data.Dataset):
 		m = self.metadata[index]
 		y = torch.Tensor(1) if m["is_hallucinating"] else torch.Tensor(0)
 
-		X = torch.tensor([m["connectivity"]["text"]["fiedlers"], m["connectivity"]["visual"]["fiedlers"]], dtype=torch.float32)
+		X = torch.tensor([m["connectivity"]["text"]["fiedler_value"], m["connectivity"]["visual"]["fiedler_value"]], dtype=torch.float32)
 
 		return X, y
 
@@ -62,6 +62,8 @@ def compute_test_metrices(model, dataloader, criterion, device="cuda"):
 # intialziign train and test dataset from the pickles path
 train_set = FiedlersDataset(train_connectivity_path)
 test_set = FiedlersDataset(test_connectivity_path)
+
+breakpoint()
 
 # creating dataloader with batching
 train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True)
