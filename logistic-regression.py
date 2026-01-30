@@ -45,7 +45,7 @@ def compute_test_metrices(model, dataloader, criterion, device="cuda"):
 		model.eval()
 		total_loss = 0.0
 
-		actuals, targets = [], []
+		actuals, predictions = [], []
 		for batch_inputs, batch_targets in dataloader:
 			batch_inputs, batch_targets = batch_inputs.to(device), batch_targets.to(device)
 			outputs = model(batch_inputs)
@@ -53,10 +53,10 @@ def compute_test_metrices(model, dataloader, criterion, device="cuda"):
 			loss = criterion(outputs, batch_targets)
 			total_loss += loss
 
-			actuals.extend(batch_targets.cpu().detach.to_numpy())
-			targets.extend(outputs.cpu().detach.to_numpy())
+			actuals.extend(batch_targets.cpu().numpy())
+			predictions.extend(outputs.cpu().numpy())
 		
-		auroc = roc_auc_score(targets, actuals)
+		auroc = roc_auc_score(actuals, predictions)
 		return {
 			"auroc": auroc,
 			"loss": total_loss/len(dataloader),
