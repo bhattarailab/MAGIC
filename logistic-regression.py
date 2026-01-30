@@ -101,7 +101,7 @@ for e in range(EPOCH):
 
 	if test_metrics["auroc"] > best_test_auroc:
 		best_model_weight = model.linear.weight.data
-		best_model_bias = model.linear.weight.bias
+		best_model_bias = model.linear.bias.data
 
 	print(f"For epoch={e+1},")
 	print(f"\ttrain auroc = {train_metrics["auroc"]}, train_loss = {train_metrics["loss"]}")
