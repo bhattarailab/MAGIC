@@ -91,7 +91,7 @@ if __name__ == "__main__":
     TRAIN_OUT = "./outputs/feidlermst_all_train.pkl"
     TEST_OUT = "./outputs/feidlermst_all_test.pkl"
 
-    N_CORES = 4
+    N_CORES = 8
     torch.set_num_threads(1)
     print(f"Starting pipeline using {N_CORES} cores...")
     run_processing_pipeline(TRAIN_IN, TRAIN_OUT, max_workers=N_CORES)
