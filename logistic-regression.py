@@ -112,7 +112,7 @@ df = pd.DataFrame({
 		*[f"layer_{i}_head_{j}_text" for i in range(32) for j in range(32)],
 		*[f"layer_{i}_head_{j}_visual" for i in range(32) for j in range(32)],
 	],
-	"weights": best_model_weight,
+	"weights": best_model_weight.cpu().detach(),
 })
 df.to_csv("./outputs/weights.csv")
 
