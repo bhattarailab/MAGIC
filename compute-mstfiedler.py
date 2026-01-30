@@ -88,8 +88,8 @@ def run_processing_pipeline(input_path: str, output_path: str, max_workers: int)
 if __name__ == "__main__":
     TRAIN_IN = "/work/FAC/HEC/DESI/yshresth/aim/noli1/green/outputs/train_all_radvqa.pkl"
     TEST_IN = "/work/FAC/HEC/DESI/yshresth/aim/noli1/green/outputs/test_all_radvqa.pkl"
-    TRAIN_OUT = "./outputs/feidlermst_all_train.pkl"
-    TEST_OUT = "./outputs/feidlermst_all_test.pkl"
+    TRAIN_OUT = "./outputs/feidlermst_all_train_nonormalized.pkl"
+    TEST_OUT = "./outputs/feidlermst_all_test_nonormalized.pkl"
 
     N_CORES = 8
     torch.set_num_threads(1)

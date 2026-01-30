@@ -5,3 +5,4 @@ inputs/
 outputs/
 __pycache__/
 logs/
+*.sh
