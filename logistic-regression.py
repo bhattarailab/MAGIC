@@ -3,8 +3,8 @@ import pickle
 from sklearn.metrics import roc_auc_score
 
 device = "cuda"
-train_connectivity_path = "./outputs/feidlermst_all_train_nonormalized.pkl"
-test_connectivity_path = "./outputs/feidlermst_all_test_nonormalized.pkl"
+train_connectivity_path = "./outputs/feidlermst_all_train.pkl"
+test_connectivity_path = "./outputs/feidlermst_all_test.pkl"
 
 class FiedlersDataset(torch.utils.data.Dataset):
 	def __init__(self, path):
