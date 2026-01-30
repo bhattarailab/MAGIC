@@ -12,12 +12,14 @@ parser.add_argument("--name", "-n", help="name to be given for the experiment", 
 parser.add_argument("--visual-weight", "-v", help="weight for visual connectivity value", default=-1, type=float)
 parser.add_argument("--text-weight", "-t", help="weight for visual connectivity value", default=1, type=float)
 parser.add_argument("--type", help="type of the conectivity mesure to be used")
+parser.add_argument("--max-heads", help="maximum number of heads", default=10, type=int)
 
 args = parser.parse_args()
 train_connectivity_path, test_connectivity_path = args.train, args.test
 exp_name = args.name
 visual_wt, text_wt = args.visual_weight, args.text_weight
 connectivity_type = args.type
+max_heads = args.max_heads
 
 with open(train_connectivity_path, "rb") as fp:
 	# each sample contains "connectivity" with dict of keys "layer_0_head_0" with "text" and "visual"
@@ -40,7 +42,7 @@ non_hallucinating_fiedlers_diff = compute_normalized_connectivity_diff(non_hallu
 
 divergence_scores = hallucinating_fiedlers_diff-non_hallucinating_fiedlers_diff
 
-selected_heads = select_heads(divergence_scores, train_connectivity, max_heads=10, t_weight=text_wt, v_weight=visual_wt, type=connectivity_type)
+selected_heads = select_heads(divergence_scores, train_connectivity, max_heads=max_heads, t_weight=text_wt, v_weight=visual_wt, type=connectivity_type)
 
 # creating the grid for divergence score visualization
 ax = sns.heatmap(divergence_scores)
