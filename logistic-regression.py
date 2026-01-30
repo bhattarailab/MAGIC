@@ -67,8 +67,6 @@ def compute_test_metrices(model, dataloader, criterion, device="cuda"):
 train_set = FiedlersDataset(train_connectivity_path)
 test_set = FiedlersDataset(test_connectivity_path)
 
-breakpoint()
-
 # creating dataloader with batching
 train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True)
 test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False)
@@ -76,16 +74,21 @@ test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=F
 # initializing the model
 model = SimpleLogisticRegression().to(device=device)
 criterion = torch.nn.BCELoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
 EPOCH = 100
 for e in range(EPOCH):
 	model.train()
 	total_loss = 0.0
+
 	for inputs, targets in train_dataloader:
+		inputs, targets = inputs.to(device), targets.to(device)
+
+		optimizer.zero_grad()
 		outputs = model(inputs)
 		loss = criterion(outputs, targets)
 		loss.backward()
-		model.zero_grad()
+		optimizer.step()
 
 		total_loss+=loss.item()
 
