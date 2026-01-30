@@ -1,6 +1,7 @@
 import torch
 import pickle
 from sklearn.metrics import roc_auc_score
+import pandas as pd
 
 device = "cuda"
 train_connectivity_path = "./outputs/feidlermst_all_train.pkl"
@@ -77,6 +78,9 @@ criterion = torch.nn.BCELoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
 EPOCH = 100
+best_test_auroc = 0
+best_model_bias, best_model_weight = None, None
+
 for e in range(EPOCH):
 	model.train()
 	total_loss = 0.0
@@ -95,5 +99,19 @@ for e in range(EPOCH):
 	train_metrics = compute_test_metrices(model=model, dataloader=train_dataloader, criterion=criterion, device=device)
 	test_metrics = compute_test_metrices(model=model, dataloader=test_dataloader, criterion=criterion, device=device)
 
-	print(f"For epoch={e+1}, train auroc = {train_metrics["auroc"]}, train_loss = {train_metrics["loss"]}")
-	print(f"For epoch={e+1}, test auroc = {test_metrics["auroc"]}, test_loss = {test_metrics["loss"]}")
+	if test_metrics["auroc"] > best_test_auroc:
+		best_model_weight = model.linear.weight.data
+		best_model_bias = model.linear.weight.bias
+
+	print(f"For epoch={e+1},")
+	print(f"\ttrain auroc = {train_metrics["auroc"]}, train_loss = {train_metrics["loss"]}")
+	print(f"\ttest auroc = {test_metrics["auroc"]}, test_loss = {test_metrics["loss"]}\n\n")
+
+df = pd.DataFrame({
+	"keys": [
+		*[f"layer_{i}_head_{j}_text" for i in range(32) for j in range(32)],
+		*[f"layer_{i}_head_{j}_visual" for i in range(32) for j in range(32)],
+	],
+	"weights": best_model_weight,
+})
+df.to_csv("./outputs/weights.csv")
