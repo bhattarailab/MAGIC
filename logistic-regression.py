@@ -18,7 +18,7 @@ class FiedlersDataset(torch.utils.data.Dataset):
 
 	def __getitem__(self, index):
 		m = self.metadata[index]
-		y = torch.Tensor(1) if m["is_hallucinating"] else torch.Tensor(0)
+		y = torch.tensor([1.0]) if m["is_hallucinating"] else torch.tensor([0.0])
 
 		all_keys = [f"layer_{i}_head_{j}" for i in range(32) for j in range(32)]
 		text_tensor = torch.tensor([m["connectivity"][k]["text"]["fiedler_value"] for k in all_keys], dtype=torch.float32)
