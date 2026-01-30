@@ -20,7 +20,11 @@ class FiedlersDataset(torch.utils.data.Dataset):
 		m = self.metadata[index]
 		y = torch.Tensor(1) if m["is_hallucinating"] else torch.Tensor(0)
 
-		X = torch.tensor([m["connectivity"]["text"]["fiedler_value"], m["connectivity"]["visual"]["fiedler_value"]], dtype=torch.float32)
+		all_keys = [f"layer_{i}_head_{j}" for i in range(32) for j in range(32)]
+		text_tensor = torch.tensor([m["connectivity"][k]["text"]["fiedler_value"] for k in all_keys], dtype=torch.float32)
+		visual_tensor = torch.tensor([m["connectivity"][k]["visual"]["fiedler_value"] for k in all_keys], dtype=torch.float32)
+
+		X = torch.concat((text_tensor, visual_tensor))
 
 		return X, y
 
