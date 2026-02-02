@@ -25,14 +25,17 @@ connectivity_type = args.type
 max_heads = args.max_heads
 n_train = args.n_train
 
-logger = Logger(f"/outputs/{exp_name}.json") if args.log else None
-logger.add("connectivity_measure", connectivity_type)
-logger.add("visual_weight", visual_wt)
-logger.add("text_weight", text_wt)
-logger.add("files", {
-	"train": train_connectivity_path,
-	"test": test_connectivity_path,
-})
+logger = Logger(f"./outputs/logs/{exp_name}.json") if args.log else None
+
+if logger:
+	logger.add("connectivity_measure", connectivity_type)
+	logger.add("name", exp_name)
+	logger.add("visual_weight", visual_wt)
+	logger.add("text_weight", text_wt)
+	logger.add("files", {
+		"train": train_connectivity_path,
+		"test": test_connectivity_path,
+	})
 
 with open(train_connectivity_path, "rb") as fp:
 	# each sample contains "connectivity" with dict of keys "layer_0_head_0" with "text" and "visual"
@@ -74,7 +77,7 @@ divergence_scores = hallucinating_fiedlers_diff-non_hallucinating_fiedlers_diff
 selected_heads, train_auroc = select_heads(divergence_scores, train_connectivity, max_heads=max_heads, t_weight=text_wt, v_weight=visual_wt, type=connectivity_type)
 
 if logger:
-	logger.add("selected_heads", selected_heads)
+	logger.add("selected_heads", selected_heads.tolist())
 
 # creating the grid for divergence score visualization
 ax = sns.heatmap(divergence_scores)
@@ -90,3 +93,5 @@ if logger:
 		"train": train_auroc,
 		"test": test_auroc,
 	})
+
+	logger.save()

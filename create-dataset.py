@@ -14,15 +14,10 @@ parser = argparse.ArgumentParser(description="Script to create the dataset for l
 parser.add_argument("--heads-log", help="path to the log file used in head selection")
 parser.add_argument("--all-heads", action="store_true", help="take all the heads for features")
 parser.add_argument("--fuse", help="whether or not to fuse the visual and text weights", action="store_true")
-parser.add_argument("--output", help="output path for the dataset")
 
 args = parser.parse_args()
 heads_log_path = args.heads_log
 all_heads, to_fuse = args.all_heads, args.fuse
-output_path = args.output
-
-if os.path.exists(output_path):
-	raise FileExistsError(f"Output file already exists at {output_path}")
 
 # opening the logs of head selection to know the parameter of new dataset
 with open(heads_log_path, "r") as fp:
@@ -34,12 +29,17 @@ connectivity_measure = head_log["connectivity_measure"]
 heads = ALl_HEADS_KEYS if all_heads else [f"layer_{l}_head_{h}" for l, h in head_log["selected_heads"]]
 train_path, test_path = head_log["files"]["train"], head_log["files"]["test"]
 visual_wt, text_wt = head_log["visual_weight"], head_log["text_weight"]
+name = head_log["name"]
+
+output_path = f"./outputs/datasets/{name}.csv"
+if os.path.exists(output_path):
+	raise FileExistsError(f"Output file already exists at {output_path}")
 
 # extracting the features from train and test paths
-with open(train_path, "r") as fp:
+with open(train_path, "rb") as fp:
 	train_samples = pickle.load(fp)
 
-with open(test_path, "r") as fp:
+with open(test_path, "rb") as fp:
 	test_samples = pickle.load(fp)
 
 dataset_rows = []

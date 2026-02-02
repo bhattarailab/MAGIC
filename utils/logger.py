@@ -7,7 +7,7 @@ def get_current_time():
 	returns current date and time in nepal time zone 
 	"""
 	tz = timezone(timedelta(hours=5, minutes=45))
-	return datetime.now(tz)
+	return datetime.now(tz).strftime("%d/%m/%Y, %H:%M:%S")
 
 class Logger:
 	def __init__(self, path):
