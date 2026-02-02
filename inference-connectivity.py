@@ -48,6 +48,10 @@ divergence_scores = hallucinating_fiedlers_diff-non_hallucinating_fiedlers_diff
 
 selected_heads = select_heads(divergence_scores, train_connectivity, max_heads=max_heads, t_weight=text_wt, v_weight=visual_wt, type=connectivity_type)
 
+# printing the selected heads
+print("The heads selected are;")
+print("\n".join([f"\tlayer_{h//32}_head_{h%32}" for h in select_heads]))
+
 # creating the grid for divergence score visualization
 ax = sns.heatmap(divergence_scores)
 plt.xlabel("heads")
