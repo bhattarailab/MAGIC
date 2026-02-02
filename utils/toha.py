@@ -77,7 +77,7 @@ def select_heads(divergece_matrix, validation_samples, max_heads=10, t_weight=1,
 
 	print(f"Total {N_optimal} heads selected with maximum AUC of {auc_max}")
 	
-	return descending_divergence_heads[:N_optimal]
+	return descending_divergence_heads[:N_optimal], auc_max
 
 def prediction(heads, samples, t_weight=1, v_weight=-1, type=None):
 	y_s = [s["is_hallucinating"] for s in samples]
@@ -94,3 +94,5 @@ def prediction(heads, samples, t_weight=1, v_weight=-1, type=None):
 
 	auc_score = roc_auc_score(y_s, p_s)
 	print(f"AUC score = {auc_score}")
+
+	return auc_score
