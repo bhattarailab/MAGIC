@@ -23,12 +23,12 @@ with open(metadata_path, "rb") as fp:
 print(f"Total samples number of samples = {len(metadata)}\n\n")
 
 # computing the median statistics
-n_answer_tokens = np.array([np.load(m["visual_subgraphs_file"])["layer_0_head_0"].shape[0] for m in metadata]).mean()
-n_query_tokens = np.array([np.load(m["text_subgraphs_file"])["layer_0_head_0"].shape[1] for m in metadata]).mean()
-n_visual_tokens = np.array([np.load(m["visual_subgraphs_file"])["layer_0_head_0"].shape[1] for m in metadata]).mean()
-print(f"\tNumber of answer tokens = {n_answer_tokens}")
-print(f"\tNumber of query tokens = {n_query_tokens}")
-print(f"\tNumber of visual tokens = {n_visual_tokens}\n")
+# n_answer_tokens = np.array([np.load(m["visual_subgraphs_file"])["layer_0_head_0"].shape[0] for m in metadata]).mean()
+# n_query_tokens = np.array([np.load(m["text_subgraphs_file"])["layer_0_head_0"].shape[1] for m in metadata]).mean()
+# n_visual_tokens = np.array([np.load(m["visual_subgraphs_file"])["layer_0_head_0"].shape[1] for m in metadata]).mean()
+# print(f"\tNumber of answer tokens = {n_answer_tokens}")
+# print(f"\tNumber of query tokens = {n_query_tokens}")
+# print(f"\tNumber of visual tokens = {n_visual_tokens}\n")
 
 n_answer_tokens = []
 for i, meta in enumerate(metadata):
