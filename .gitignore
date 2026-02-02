@@ -2,7 +2,11 @@
 *.swp
 attentions/
 inputs/
-outputs/
+outputs/*
+!outputs/logs/
+outputs/logs/*
+!outputs/logs/hello.json
 __pycache__/
 logs/
+!logs/
 *.sh
