@@ -2,20 +2,25 @@ import torch
 import pickle
 from sklearn.metrics import roc_auc_score
 import pandas as pd
+import argparse
+
+parser = argparse.ArgumentParser(description="performs logistic regression on the given csv file")
+parser.add_argument("--csv", help="CSV file created using create-dataset.py")
 
 device = "cuda"
-train_connectivity_path = "./outputs/feidlermst_all_train.pkl"
-test_connectivity_path = "./outputs/feidlermst_all_test.pkl"
 
-class FiedlersDataset(torch.utils.data.Dataset):
-	def __init__(self, path):
+class ConnectivityVectorDataset(torch.utils.data.Dataset):
+	def __init__(self, csv_path, split="train"):
 		super().__init__()
+		df = pd.read_csv(csv_path)
+		split_df = df[df["split"] == split]
 
-		with open(path, "rb") as fp:
-			self.metadata = pickle.load(fp)
+		features_column = [s for s in split_df.columns if s.startswith("layer_")]
+		self.X = split_df[features_column].to_numpy()
+		self.y = split_df["label"].to_numpy()
 
 	def __len__(self):
-		return len(self.metadata)
+		return len(self.y)
 
 	def __getitem__(self, index):
 		m = self.metadata[index]
