@@ -1,3 +1,8 @@
+## Workflow of the Scripts
+1. `extract-connectivity.py`, extracts the given connectivity measure and creates a `.pkl` file
+2. `inference-connectivity.py`, performs head selections and testing in unsupervised fashion and creates `.json` log file.
+3. `create-dataset.py`, creates the dataset for logistic regression task.
+
 ## Result from Experiments
 | algebraic connectivity | dataset | split | auroc | remarks | 
 | :--- | :---: | :---: | :---: | :--- | 

@@ -56,8 +56,8 @@ print(f"Total {len(hallucinating_samples)} and {len(non_hallucinating_samples)} 
 if logger:
 	logger.add("n_train_samples", {
 		"total": len(train_connectivity),
-		"hallucinating": sum([True if m["is_hallucinating"] else False for m in train_connectivity]),
-		"non_hallucinating": sum([False if m["is_hallucinating"] else True for m in train_connectivity]),
+		"hallucinating": len(hallucinating_samples),
+		"non_hallucinating": len(non_hallucinating_samples),
 	})
 
 	logger.add("n_test_samples", {
