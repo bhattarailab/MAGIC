@@ -2,7 +2,6 @@ import pickle
 import seaborn as sns
 import matplotlib.pyplot as plt
 import argparse
-import datetime
 
 from utils.toha import compute_normalized_connectivity_diff, select_heads, prediction
 from utils.logger import Logger
@@ -27,6 +26,13 @@ max_heads = args.max_heads
 n_train = args.n_train
 
 logger = Logger(f"/outputs/{exp_name}.json") if args.log else None
+logger.add("connectivity_measure", connectivity_type)
+logger.add("visual_weight", visual_wt)
+logger.add("text_weight", text_wt)
+logger.add("files", {
+	"train": train_connectivity_path,
+	"test": test_connectivity_path,
+})
 
 with open(train_connectivity_path, "rb") as fp:
 	# each sample contains "connectivity" with dict of keys "layer_0_head_0" with "text" and "visual"
