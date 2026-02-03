@@ -29,7 +29,7 @@ class ConnectivityVectorDataset(torch.utils.data.Dataset):
 		return len(self.y)
 
 	def __getitem__(self, index):
-		return torch.tensor(self.X[index], dtype=torch.float32), torch.tensor(self.y[index]).reshape((1, 1))
+		return torch.tensor(self.X[index], dtype=torch.float32), torch.tensor(self.y[index]).reshape((1,))
 
 # intialziign train and test dataset from the pickles path
 train_set = ConnectivityVectorDataset(csv_path, split="train")
