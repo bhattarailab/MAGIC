@@ -1,13 +1,19 @@
 import torch
-import pickle
-from sklearn.metrics import roc_auc_score
 import pandas as pd
 import argparse
+from models.simple_logistic import SimpleLogisticRegression
+from utils.model import compute_test_metrices
 
 parser = argparse.ArgumentParser(description="performs logistic regression on the given csv file")
 parser.add_argument("--csv", help="CSV file created using create-dataset.py")
+parser.add_argument("--device", help="device to run the model", default="cuda")
+parser.add_argument("--epoch", help="Epoch for training the model", default=50, type=int)
+parser.add_argument("--weight-path", help="Path where the weights of neuron is to be saved")
 
-device = "cuda"
+args = parser.parse_args()
+csv_path, device = args.csv, args.device
+epoch = args.epoch
+weight_path = args.weight_path
 
 class ConnectivityVectorDataset(torch.utils.data.Dataset):
 	def __init__(self, csv_path, split="train"):
@@ -34,44 +40,9 @@ class ConnectivityVectorDataset(torch.utils.data.Dataset):
 
 		return X, y
 
-class SimpleLogisticRegression(torch.nn.Module):
-	def __init__(self):
-		super().__init__()
-		self.linear = torch.nn.Linear(in_features=32*32*2, out_features=1, bias=True)
-		self.sigmoid = torch.nn.Sigmoid()
-
-	def forward(self, x):
-		y = self.linear(x)
-		y = self.sigmoid(y)
-
-		return y
-
-def compute_test_metrices(model, dataloader, criterion, device="cuda"):
-	with torch.no_grad():
-		model.eval()
-		total_loss = 0.0
-
-		actuals, predictions = [], []
-		for batch_inputs, batch_targets in dataloader:
-			batch_inputs, batch_targets = batch_inputs.to(device), batch_targets.to(device)
-			outputs = model(batch_inputs)
-
-			loss = criterion(outputs, batch_targets)
-			total_loss += loss
-
-			actuals.extend(batch_targets.cpu().numpy())
-			predictions.extend(outputs.cpu().numpy())
-		
-		auroc = roc_auc_score(actuals, predictions)
-		return {
-			"auroc": auroc,
-			"loss": total_loss/len(dataloader),
-		}
-
-
 # intialziign train and test dataset from the pickles path
-train_set = FiedlersDataset(train_connectivity_path)
-test_set = FiedlersDataset(test_connectivity_path)
+train_set = ConnectivityVectorDataset(csv_path, split="train")
+test_set = ConnectivityVectorDataset(csv_path, split="test")
 
 # creating dataloader with batching
 train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True)
@@ -82,11 +53,11 @@ model = SimpleLogisticRegression().to(device=device)
 criterion = torch.nn.BCELoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
-EPOCH = 100
+# training the model for 100 epoch
 best_test_auroc = 0
 best_model_bias, best_model_weight = None, None
 
-for e in range(EPOCH):
+for e in range(epoch):
 	model.train()
 	total_loss = 0.0
 
@@ -112,13 +83,14 @@ for e in range(EPOCH):
 	print(f"\ttrain auroc = {train_metrics["auroc"]}, train_loss = {train_metrics["loss"]}")
 	print(f"\ttest auroc = {test_metrics["auroc"]}, test_loss = {test_metrics["loss"]}\n\n")
 
-df = pd.DataFrame({
-	"keys": [
-		*[f"layer_{i}_head_{j}_text" for i in range(32) for j in range(32)],
-		*[f"layer_{i}_head_{j}_visual" for i in range(32) for j in range(32)],
-	],
-	"weights": best_model_weight.cpu().detach().flatten(),
-})
-df.to_csv("./outputs/weights.csv")
+if weight_path:
+	df = pd.DataFrame({
+		"keys": [
+			*[f"layer_{i}_head_{j}_text" for i in range(32) for j in range(32)],
+			*[f"layer_{i}_head_{j}_visual" for i in range(32) for j in range(32)],
+		],
+		"weights": best_model_weight.cpu().detach().flatten(),
+	})
+	df.to_csv(weight_path)
 
 breakpoint()
