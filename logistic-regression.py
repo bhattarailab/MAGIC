@@ -29,18 +29,21 @@ class ConnectivityVectorDataset(torch.utils.data.Dataset):
 		return len(self.y)
 
 	def __getitem__(self, index):
-		return torch.tensor(self.X[index]), torch.tensor(self.y[index]).reshape((1, 1))
+		return torch.tensor(self.X[index], dtype=torch.float32), torch.tensor(self.y[index]).reshape((1, 1))
 
 # intialziign train and test dataset from the pickles path
 train_set = ConnectivityVectorDataset(csv_path, split="train")
 test_set = ConnectivityVectorDataset(csv_path, split="test")
+
+# feature size controls the weight parameter for the model
+n_features = train_set[0][0].shape[-1]
 
 # creating dataloader with batching
 train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True)
 test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False)
 
 # initializing the model
-model = SimpleLogisticRegression().to(device=device)
+model = SimpleLogisticRegression(n_features).to(device=device)
 criterion = torch.nn.BCELoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
