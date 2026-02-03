@@ -29,16 +29,7 @@ class ConnectivityVectorDataset(torch.utils.data.Dataset):
 		return len(self.y)
 
 	def __getitem__(self, index):
-		m = self.metadata[index]
-		y = torch.tensor([1.0]) if m["is_hallucinating"] else torch.tensor([0.0])
-
-		all_keys = [f"layer_{i}_head_{j}" for i in range(32) for j in range(32)]
-		text_tensor = torch.tensor([m["connectivity"][k]["text"]["fiedler_value"] for k in all_keys], dtype=torch.float32)
-		visual_tensor = torch.tensor([m["connectivity"][k]["visual"]["fiedler_value"] for k in all_keys], dtype=torch.float32)
-
-		X = torch.concat((text_tensor, visual_tensor))
-
-		return X, y
+		return torch.tensor(self.X[index]), torch.tensor(self.y[index]).reshape((1, 1))
 
 # intialziign train and test dataset from the pickles path
 train_set = ConnectivityVectorDataset(csv_path, split="train")
