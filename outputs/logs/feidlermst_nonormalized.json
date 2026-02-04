@@ -1,0 +1,55 @@
+{
+  "timestamp": "02/02/2026, 17:04:09",
+  "connectivity_measure": "fiedler_value",
+  "name": "feidlermst_nonormalized",
+  "visual_weight": -1.0,
+  "text_weight": 1.0,
+  "files": {
+    "train": "./outputs/feidlermst_all_train_nonormalized.pkl",
+    "test": "./outputs/feidlermst_all_test_nonormalized.pkl"
+  },
+  "n_train_samples": {
+    "total": 200,
+    "hallucinating": 102,
+    "non_hallucinating": 98
+  },
+  "n_test_samples": {
+    "total": 451,
+    "hallucinating": 234,
+    "non_hallucinating": 217
+  },
+  "selected_heads": [
+    [
+      22,
+      17
+    ],
+    [
+      7,
+      15
+    ],
+    [
+      27,
+      6
+    ],
+    [
+      4,
+      14
+    ],
+    [
+      5,
+      14
+    ],
+    [
+      8,
+      15
+    ],
+    [
+      28,
+      6
+    ]
+  ],
+  "auroc": {
+    "train": 0.7450980392156863,
+    "test": 0.6112883532238371
+  }
+}

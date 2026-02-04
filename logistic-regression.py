@@ -19,7 +19,7 @@ parser.add_argument("--breakpoint", "-b", help="have breakpoint after execution 
 args = parser.parse_args()
 csv_path, device = args.csv, args.device
 epoch = args.epoch
-weight_path, heatmap = args.weight_path, args.heatmap
+weight_path, heatmap = args.weight_path, args.heatmap_name
 has_breakpoint = args.breakpoint
 
 class ConnectivityVectorDataset(torch.utils.data.Dataset):
