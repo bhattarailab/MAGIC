@@ -1,0 +1,5 @@
+/var/spool/slurm/d/job58496497/slurm_script: line 15: ./venv-connectivity/bin/activate: No such file or directory
+Traceback (most recent call last):
+  File "/work/FAC/HEC/DESI/yshresth/aim/noli1/vlm-hallucination/compute-mstfiedler.py", line 2, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
