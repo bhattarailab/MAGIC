@@ -65,3 +65,15 @@ Supervised consdierign all heads with fused measure
 	train auroc = 0.700791610111708, train_loss = 0.6796728372573853
 	test auroc = 0.6664697309858598, test_loss = 0.6804147958755493
 ```
+
+```bash
+max_attentions 
+
+Supervised selected heads not fuse
+	train auroc = 0.6439952971763943, train_loss = 0.6640625596046448
+	test auroc = 0.6241088660443499, test_loss = 0.6772207617759705
+
+Supervised all heads fused
+	train auroc = 0.7899580696757091, train_loss = 0.5883111953735352
+	test auroc = 0.7203316396864784, test_loss = 0.648457407951355
+```

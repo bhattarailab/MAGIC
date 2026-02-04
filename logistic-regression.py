@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import argparse
 from models.simple_logistic import SimpleLogisticRegression
+from models.linear_logistic import LinearLogisticRegression
 from utils.model import compute_test_metrices
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -15,12 +16,14 @@ parser.add_argument("--epoch", help="Epoch for training the model", default=50, 
 parser.add_argument("--weight-path", help="Path where the weights of neuron is to be saved")
 parser.add_argument("--heatmap-name", help="Store the weight in form of heatmap, input should be the name of heatmap")
 parser.add_argument("--breakpoint", "-b", help="have breakpoint after execution better for testing")
+parser.add_argument("--model", help="option to choose the model")
 
 args = parser.parse_args()
 csv_path, device = args.csv, args.device
 epoch = args.epoch
 weight_path, heatmap = args.weight_path, args.heatmap_name
 has_breakpoint = args.breakpoint
+model_type = args.model
 
 class ConnectivityVectorDataset(torch.utils.data.Dataset):
 	def __init__(self, csv_path, split="train"):
@@ -50,7 +53,11 @@ train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle
 test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False)
 
 # initializing the model
-model = SimpleLogisticRegression(n_features).to(device=device)
+if model_type == "linear":
+	model = LinearLogisticRegression(n_features).to(device=device)
+else:
+	model = SimpleLogisticRegression(n_features).to(device=device)
+
 criterion = torch.nn.BCELoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
