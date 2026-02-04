@@ -87,6 +87,7 @@ for e in range(epoch):
 	test_metrics = compute_test_metrices(model=model, dataloader=test_dataloader, criterion=criterion, device=device)
 
 	if test_metrics["auroc"] > best_test_auroc:
+		continue
 		best_model_weight = model.linear.weight.data
 		best_model_bias = model.linear.bias.data
 
