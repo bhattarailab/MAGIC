@@ -58,6 +58,9 @@ if model_type == "linear":
 else:
 	model = SimpleLogisticRegression(n_features).to(device=device)
 
+# for debugging
+print(model)
+
 criterion = torch.nn.BCELoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
