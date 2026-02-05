@@ -8,6 +8,8 @@ from utils.model import compute_test_metrices
 import seaborn as sns
 import matplotlib.pyplot as plt
 import re
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
 
 parser = argparse.ArgumentParser(description="performs logistic regression on the given csv file")
 parser.add_argument("--csv", help="CSV file created using create-dataset.py")
@@ -55,93 +57,122 @@ test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=F
 # initializing the model
 if model_type == "linear":
 	model = LinearLogisticRegression(n_features).to(device=device)
+elif model_type == "scikit-learn":
+	model = LogisticRegression(max_iter=2_000, class_weight="balanced", random_state=42)
 else:
 	model = SimpleLogisticRegression(n_features).to(device=device)
 
 # for debugging
 print(model)
 
-criterion = torch.nn.BCELoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+if not model_type == "scikit-learn":
+	criterion = torch.nn.BCELoss()
+	optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
-# training the model for 100 epoch
-best_test_auroc = 0
-best_model_bias, best_model_weight = None, None
+	# training the model for 100 epoch
+	best_test_auroc = 0
+	best_model_bias, best_model_weight = None, None
 
-for e in range(epoch):
-	model.train()
-	total_loss = 0.0
+	for e in range(epoch):
+		model.train()
+		total_loss = 0.0
 
-	for inputs, targets in train_dataloader:
-		inputs, targets = inputs.to(device), targets.to(device)
+		for inputs, targets in train_dataloader:
+			inputs, targets = inputs.to(device), targets.to(device)
 
-		optimizer.zero_grad()
-		outputs = model(inputs)
-		loss = criterion(outputs, targets)
-		loss.backward()
-		optimizer.step()
+			optimizer.zero_grad()
+			outputs = model(inputs)
+			loss = criterion(outputs, targets)
+			loss.backward()
+			optimizer.step()
 
-		total_loss+=loss.item()
+			total_loss+=loss.item()
 
-	train_metrics = compute_test_metrices(model=model, dataloader=train_dataloader, criterion=criterion, device=device)
-	test_metrics = compute_test_metrices(model=model, dataloader=test_dataloader, criterion=criterion, device=device)
+		train_metrics = compute_test_metrices(model=model, dataloader=train_dataloader, criterion=criterion, device=device)
+		test_metrics = compute_test_metrices(model=model, dataloader=test_dataloader, criterion=criterion, device=device)
 
-	if test_metrics["auroc"] > best_test_auroc:
-		pass
-		# best_model_weight = model.linear.weight.data
-		# best_model_bias = model.linear.bias.data
+		if test_metrics["auroc"] > best_test_auroc:
+			pass
+			# best_model_weight = model.linear.weight.data
+			# best_model_bias = model.linear.bias.data
 
-	print(f"For epoch={e+1},")
-	print(f"\ttrain auroc = {train_metrics["auroc"]}, train_loss = {train_metrics["loss"]}")
-	print(f"\ttest auroc = {test_metrics["auroc"]}, test_loss = {test_metrics["loss"]}\n\n")
+		print(f"For epoch={e+1},")
+		print(f"\ttrain auroc = {train_metrics["auroc"]}, train_loss = {train_metrics["loss"]}")
+		print(f"\ttest auroc = {test_metrics["auroc"]}, test_loss = {test_metrics["loss"]}\n\n")
 
 
-def df_to_matrix(dataframe):
-	matrix = np.zeros((32, 32))
+	def df_to_matrix(dataframe):
+		matrix = np.zeros((32, 32))
 
-	for key in dataframe["keys"]:
-		l, h = re.match(r"layer_(\d+)_head_(\d+)_\w*").groups()
-		matrix[l][h] = dataframe.loc[dataframe["key"] == key, "weight"].iloc[0]
+		for key in dataframe["keys"]:
+			l, h = re.match(r"layer_(\d+)_head_(\d+)_\w*").groups()
+			matrix[l][h] = dataframe.loc[dataframe["key"] == key, "weight"].iloc[0]
 
-	return matrix
+		return matrix
 
-def save_heatmap(matrix, name, title):
-	sns.heatmap(matrix, cbar=True)
-	plt.title(title)
-	plt.xlabel("head")
-	plt.ylabel("layer")
-	plt.tight_layout()
-	plt.savefig(f"./outputs/heatmaps/name.png")
+	def save_heatmap(matrix, name, title):
+		sns.heatmap(matrix, cbar=True)
+		plt.title(title)
+		plt.xlabel("head")
+		plt.ylabel("layer")
+		plt.tight_layout()
+		plt.savefig(f"./outputs/heatmaps/name.png")
 
-if weight_path or heatmap:
-	df = pd.DataFrame({
-		"keys": train_set.feature_columns,
-		"weights": best_model_weight.cpu().detach().flatten(),
-	})
+	if weight_path or heatmap:
+		df = pd.DataFrame({
+			"keys": train_set.feature_columns,
+			"weights": best_model_weight.cpu().detach().flatten(),
+		})
 
-	if weight_path:
-		df.to_csv(weight_path)
+		if weight_path:
+			df.to_csv(weight_path)
 
-	if len(df["keys"]) < 32*32:
-		raise Exception("All layers and heads are not provided")
+		if len(df["keys"]) < 32*32:
+			raise Exception("All layers and heads are not provided")
+		
+		if heatmap:
+			# if text and vision are fused then, there will be one heatmap <name>.png
+			# else, there will be three heatmaps; <name>-text.png, <name>-visual.png, <name>-fused.png
+			if df["keys"].values[0].endswith("_feature"):
+				heatmap_matrix = df_to_matrix(df)
+				save_heatmap(heatmap_matrix, name=heatmap, title="Heatmap for fused")
+			else:
+				subdf_text = df[df["keys"].str.endswith("text", na=False)]
+				subdf_visual = df[df["keys"].str.endswith("visual", na=False)]
+				
+				text_matrix = df_to_matrix(subdf_text)
+				visual_matrix = df_to_matrix(subdf_visual)
+				fused_matrix = (text_matrix+visual_matrix)/2
+
+				save_heatmap(text_matrix, name=f"{heatmap}_text", title="Heatmap for text")
+				save_heatmap(visual_matrix, name=f"{heatmap}_visual", title="Heatmap for visual")
+				save_heatmap(fused_matrix, name=f"{heatmap}_fused", title="Heatmap for fused")
+else:
+	def dataset_to_numpy(dataset):
+		ret_x, ret_y = [], []
+		for X, y in dataset:
+			ret_x.append(X)
+			ret_y.append(y.item())
+
+		return np.array(ret_x), np.array(ret_y)
+
+	# creating the tran and test set as per the requirement of sklearn
+	sklearn_train_X, sklearn_train_y = dataset_to_numpy(train_set)
+	sklearn_test_X, sklearn_test_y = dataset_to_numpy(test_set)
+
+	model.fit(sklearn_train_X, sklearn_train_y)
+	test_prob = model.predict_proba(sklearn_test_X)
+
+	score = roc_auc_score(sklearn_test_y, test_prob[:, 1])
 	
-	if heatmap:
-		# if text and vision are fused then, there will be one heatmap <name>.png
-		# else, there will be three heatmaps; <name>-text.png, <name>-visual.png, <name>-fused.png
-		if df["keys"].values[0].endswith("_feature"):
-			heatmap_matrix = df_to_matrix(df)
-			save_heatmap(heatmap_matrix, name=heatmap, title="Heatmap for fused")
-		else:
-			subdf_text = df[df["keys"].str.endswith("text", na=False)]
-			subdf_visual = df[df["keys"].str.endswith("visual", na=False)]
-			
-			text_matrix = df_to_matrix(subdf_text)
-			visual_matrix = df_to_matrix(subdf_visual)
-			fused_matrix = (text_matrix+visual_matrix)/2
+	coefficinets = model.coef_[0]
+	absolute_coefficients = np.abs(coefficinets)
+	descending_indices = np.argsort(absolute_coefficients)[::-1]
+	top_features = np.array(train_set.feature_columns)[descending_indices]
+	breakpoint()
 
-			save_heatmap(text_matrix, name=f"{heatmap}_text", title="Heatmap for text")
-			save_heatmap(visual_matrix, name=f"{heatmap}_visual", title="Heatmap for visual")
-			save_heatmap(fused_matrix, name=f"{heatmap}_fused", title="Heatmap for fused")
+	print(f"Test AUROC = {score}")
+
 
 if has_breakpoint:
 	breakpoint()
