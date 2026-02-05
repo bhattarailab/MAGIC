@@ -1,0 +1,67 @@
+{
+  "timestamp": "05/02/2026, 14:25:41",
+  "connectivity_measure": "gini",
+  "name": "gini",
+  "visual_weight": -1,
+  "text_weight": 1,
+  "files": {
+    "train": "./outputs/basics_train_all.pkl",
+    "test": "./outputs/basics_test_all.pkl"
+  },
+  "n_train_samples": {
+    "total": 200,
+    "hallucinating": 102,
+    "non_hallucinating": 98
+  },
+  "n_test_samples": {
+    "total": 451,
+    "hallucinating": 234,
+    "non_hallucinating": 217
+  },
+  "selected_heads": [
+    [
+      15,
+      27
+    ],
+    [
+      19,
+      9
+    ],
+    [
+      17,
+      21
+    ],
+    [
+      23,
+      13
+    ],
+    [
+      15,
+      5
+    ],
+    [
+      20,
+      13
+    ],
+    [
+      20,
+      20
+    ],
+    [
+      14,
+      2
+    ],
+    [
+      22,
+      16
+    ],
+    [
+      17,
+      7
+    ]
+  ],
+  "auroc": {
+    "train": 0.7463985594237695,
+    "test": 0.5806057741541613
+  }
+}

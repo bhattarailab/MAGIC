@@ -19,6 +19,7 @@ parser.add_argument("--weight-path", help="Path where the weights of neuron is t
 parser.add_argument("--heatmap-name", help="Store the weight in form of heatmap, input should be the name of heatmap")
 parser.add_argument("--breakpoint", "-b", help="have breakpoint after execution better for testing")
 parser.add_argument("--model", help="option to choose the model")
+parser.add_argument("--n-train", help="number of train samples", type=int, default=0)
 
 args = parser.parse_args()
 csv_path, device = args.csv, args.device
@@ -26,6 +27,7 @@ epoch = args.epoch
 weight_path, heatmap = args.weight_path, args.heatmap_name
 has_breakpoint = args.breakpoint
 model_type = args.model
+n_train = args.n_train
 
 class ConnectivityVectorDataset(torch.utils.data.Dataset):
 	def __init__(self, csv_path, split="train"):
@@ -160,6 +162,10 @@ else:
 	sklearn_train_X, sklearn_train_y = dataset_to_numpy(train_set)
 	sklearn_test_X, sklearn_test_y = dataset_to_numpy(test_set)
 
+	# using only a subset of the dataset
+	if n_train:
+		sklearn_train_X, sklearn_train_y = sklearn_train_X[:n_train], sklearn_train_y[:n_train]
+
 	model.fit(sklearn_train_X, sklearn_train_y)
 	test_prob = model.predict_proba(sklearn_test_X)
 
@@ -169,7 +175,6 @@ else:
 	absolute_coefficients = np.abs(coefficinets)
 	descending_indices = np.argsort(absolute_coefficients)[::-1]
 	top_features = np.array(train_set.feature_columns)[descending_indices]
-	breakpoint()
 
 	print(f"Test AUROC = {score}")
 

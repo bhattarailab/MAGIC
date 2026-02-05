@@ -77,3 +77,20 @@ Supervised all heads fused
 	train auroc = 0.7899580696757091, train_loss = 0.5883111953735352
 	test auroc = 0.7203316396864784, test_loss = 0.648457407951355
 ```
+
+## Results from All Basics
+| metric | unsupervised | no fusion | arithmetic fusion | divide fusion |
+|--|--|--|--|--|
+| max attention | - | 0.72169 | 0.72809 | 0.6811 | 
+| mean attention | 0.575 | 0.66402 | 0.66359 | 0.68181 | 
+| entropy | 0.5044 | 0.70528 | 0.68202 | 0.68297 | 
+| gini | 0.5806 | 0.73356 | 0.72612 | 0.6878 | 
+| effective rank | 0.5149 | 0.61508 | 0.61115 | 0.68088 | 
+
+```bash
+# with fusion as text - vision
+mean attention = unsupervised 0.575 to 0.66359
+entropy = unsupervised 0.5044 to 0.68202
+gini = unsupervised 0.5806 to 0.72612
+effective_rank = unsupervised 0.5149 to 0.61115
+```
