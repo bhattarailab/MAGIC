@@ -81,7 +81,7 @@ Supervised all heads fused
 ## Results from All Basics
 | metric | unsupervised | no fusion | arithmetic fusion | divide fusion |
 |--|--|--|--|--|
-| max attention | - | 0.72169 | 0.72809 | 0.6811 | 
+| max attention | 0.6293 | 0.72169 | 0.72809 | 0.6811 | 
 | mean attention | 0.575 | 0.66402 | 0.66359 | 0.68181 | 
 | entropy | 0.5044 | 0.70528 | 0.68202 | 0.68297 | 
 | gini | 0.5806 | 0.73356 | 0.72612 | 0.6878 | 
