@@ -61,7 +61,6 @@ for i, s in enumerate(train_samples):
 
 		if fusion:
 			if fusion == "addition":
-				pass
 				row_dict[f"{k}_feature"] = visual_wt*visual_feature+text_wt*text_feature
 			elif fusion == "division":
 				row_dict[f"{k}_feature"] = text_feature/(text_feature+visual_feature)
@@ -86,7 +85,6 @@ for i, s in enumerate(test_samples):
 
 		if fusion:
 			if fusion == "addition":
-				pass
 				row_dict[f"{k}_feature"] = visual_wt*visual_feature+text_wt*text_feature
 			elif fusion == "division":
 				row_dict[f"{k}_feature"] = text_feature/(text_feature+visual_feature)

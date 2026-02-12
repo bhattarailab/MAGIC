@@ -175,6 +175,11 @@ else:
 	absolute_coefficients = np.abs(coefficinets)
 	descending_indices = np.argsort(absolute_coefficients)[::-1]
 	top_features = np.array(train_set.feature_columns)[descending_indices]
+	features_df = pd.DataFrame({
+		"key": train_set.feature_columns,
+		"coeffecients": coefficinets,
+	})
+	features_df.to_csv("./outputs/importances.csv")
 
 	print(f"Test AUROC = {score}")
 
