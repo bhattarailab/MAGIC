@@ -3,6 +3,11 @@ import numpy as np
 def compute_gini(values):
 	sorted_values = np.sort(values.flatten())
 	n = len(sorted_values)
+
+	# Handle edge cases
+	if n == 0 or np.sum(sorted_values) == 0:
+			return 0.0
+	
 	index = np.arange(1, n+1)
 	return (2*np.sum(index*sorted_values))/(n* np.sum(sorted_values)) - (n+1)/n
 
