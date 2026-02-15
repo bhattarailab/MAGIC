@@ -1,7 +1,14 @@
 import pickle
 import numpy as np
 import argparse
-from tqdm.auto import tqdm
+from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import os
+
+# multiprocessing boost
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from connectivity import get_connectivity_function
 
@@ -31,9 +38,9 @@ print(f"Total samples number of samples = {len(metadata)}\n\n")
 # print(f"\tNumber of query tokens = {n_query_tokens}")
 # print(f"\tNumber of visual tokens = {n_visual_tokens}\n")
 
-n_answer_tokens = []
-for i, meta in tqdm(enumerate(metadata), total=len(metadata), desc="Samples"):
-	# print(f"\tExtracting algebraic connectivity for {i+1}th sample")
+def process_sample(args):
+	i, meta = args
+
 	visual_path, text_path = meta["visual_subgraphs_file"], meta["text_subgraphs_file"]
 	
 	# contains all the text and visual attention submatrices for all layers and heads
@@ -41,7 +48,6 @@ for i, meta in tqdm(enumerate(metadata), total=len(metadata), desc="Samples"):
 
 	# stores the connectivity value with key `layer_<layer>_head_<head>`
 	connectivity_value_dict = dict()
-	connectivity_value_dict["_type"] = connectivity_id
 
 	n_layers, n_heads = 32, 32
 	for layer in range(n_layers):
@@ -60,7 +66,17 @@ for i, meta in tqdm(enumerate(metadata), total=len(metadata), desc="Samples"):
 				"visual": visual_connectivity,
 			}
 		
-	metadata[i]["connectivity"] = connectivity_value_dict
+	return i, connectivity_value_dict
+
+num_workers = os.cpu_count()-1
+print(f"Number of workers = {num_workers}")
+tasks = [(i, meta) for i, meta in enumerate(metadata)]
+with ProcessPoolExecutor(max_workers=num_workers) as executor:
+	futures = [executor.submit(process_sample, t) for t in tasks]
+
+	for fut in tqdm(as_completed(futures), total=len(futures), desc="Samples"):
+		i, connectivity_dict = fut.result()
+		metadata[i]["connectivity"] = connectivity_dict
 
 with open(output_path, "wb") as fp:
 	pickle.dump(metadata, fp)
