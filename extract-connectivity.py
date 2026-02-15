@@ -1,6 +1,7 @@
 import pickle
 import numpy as np
 import argparse
+from tqdm.auto import tqdm
 
 from connectivity import get_connectivity_function
 
@@ -31,8 +32,8 @@ print(f"Total samples number of samples = {len(metadata)}\n\n")
 # print(f"\tNumber of visual tokens = {n_visual_tokens}\n")
 
 n_answer_tokens = []
-for i, meta in enumerate(metadata):
-	print(f"\tExtracting algebraic connectivity for {i+1}th sample")
+for i, meta in tqdm(enumerate(metadata), total=len(metadata), desc="Samples"):
+	# print(f"\tExtracting algebraic connectivity for {i+1}th sample")
 	visual_path, text_path = meta["visual_subgraphs_file"], meta["text_subgraphs_file"]
 	
 	# contains all the text and visual attention submatrices for all layers and heads

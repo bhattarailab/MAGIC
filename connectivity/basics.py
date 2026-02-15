@@ -1,5 +1,4 @@
 import numpy as np
-import time
 
 def compute_gini(values):
 	sorted_values = np.sort(values.flatten())
@@ -19,10 +18,7 @@ def compute_basic_measures(matrix):
 
 	features = {}
 	features["mean_attention"] = matrix.mean()
-	start_time = time.time()
 	features["max_attention"] = matrix.max()
-	end_time = time.time()
-	print(f"Time spent in max_attention = {end_time-start_time}")
 
 	probs = matrix.flatten()
 	probs = probs/(probs.sum()+1e-10)
