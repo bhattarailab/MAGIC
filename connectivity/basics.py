@@ -1,6 +1,12 @@
 import numpy as np
 import time
 
+def compute_gini(values):
+	sorted_values = np.sort(values.flatten())
+	n = len(sorted_values)
+	index = np.arange(1, n+1)
+	return (2*np.sum(index*sorted_values))/(n* np.sum(sorted_values)) - (n+1)/n
+
 def compute_basic_measures(matrix):
 	"""
 	Computes all the basic measures that can be extracted from the attention maps including;
@@ -21,12 +27,8 @@ def compute_basic_measures(matrix):
 	probs = matrix.flatten()
 	probs = probs/(probs.sum()+1e-10)
 	features["entropy"] = -np.sum(probs * np.log(probs+1e-10))
-
-	sorted_weights = np.sort(matrix.flatten())
-	n = len(sorted_weights)
-	index = np.arange(1, n+1)
-	features["gini"] = (2*np.sum(index*sorted_weights))/(n* np.sum(sorted_weights)) - (n+1)/n
-
+	features["gini"] = compute_gini(matrix)
+	features["per_token_gini"] = np.mean([compute_gini(m) for m in matrix])
 	features["effective_rank"] = np.exp(features["entropy"])
 
 	return features
