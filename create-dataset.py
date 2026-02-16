@@ -4,7 +4,7 @@ import json
 import argparse
 import os
 
-ALl_HEADS_KEYS = [f"layer_{l}_head_{h}" for h in range(32) for l in range(32)]
+ALl_HEADS_KEYS = [f"layer_{l}_head_{h}" for l in range(32) for h in range(32)]
 
 parser = argparse.ArgumentParser(description="Script to create the dataset for logistic regression task")
 
@@ -18,6 +18,10 @@ parser.add_argument("--breakpoint", "-b", help="breakpoint at end for debugging"
 parser.add_argument("--pickle", nargs=2, help="creates dataset using the connectivity pickle i.e. output of extract connectivity, two arguments should be provided first one is train second is test")
 parser.add_argument("--name", default="dataset", help="name for the dataset optional")
 parser.add_argument("--connectivity", default=["gini"], nargs="+", help="connectivity measures")
+parser.add_argument("--mode", type=str, choices=[
+	"decomposed",
+	"full"
+], default="decomposed")
 
 args = parser.parse_args()
 heads_log_path = args.heads_log
@@ -26,6 +30,7 @@ has_breakpoint = args.breakpoint
 connectivity_pickle = args.pickle
 connectivities = args.connectivity
 name = args.name
+mode = args.mode
 
 if connectivity_pickle:
 	train_pickle, test_pickle = connectivity_pickle
@@ -43,7 +48,7 @@ if connectivity_pickle:
 			connectivity_sample = {}
 			for l in range(32):
 				for h in range(32):
-					for t in ["text", "visual"]:
+					for t in ["text", "visual"] if mode == "decomposed" else ["attention"]:
 						for c in connectivities:
 							key = f"layer_{l}_head_{h}_{c}_{t}"
 							connectivity_sample[key] = sample["connectivity"][f"layer_{l}_head_{h}"][t][c]
@@ -86,19 +91,22 @@ if heads_log_path:
 		row_dict = dict()
 
 		for k in heads:
-			text_feature = s["connectivity"][k]["text"][connectivity_measure]
-			visual_feature = s["connectivity"][k]["visual"][connectivity_measure]
+			if mode == "decomposed":
+				text_feature = s["connectivity"][k]["text"][connectivity_measure]
+				visual_feature = s["connectivity"][k]["visual"][connectivity_measure]
 
-			if fusion:
-				if fusion == "addition":
-					row_dict[f"{k}_feature"] = visual_wt*visual_feature+text_wt*text_feature
-				elif fusion == "division":
-					row_dict[f"{k}_feature"] = text_feature/(text_feature+visual_feature)
+				if fusion:
+					if fusion == "addition":
+						row_dict[f"{k}_feature"] = visual_wt*visual_feature+text_wt*text_feature
+					elif fusion == "division":
+						row_dict[f"{k}_feature"] = text_feature/(text_feature+visual_feature)
+					else:
+						raise Exception(f"fuse can be one of addition or division, got {fusion}")
 				else:
-					raise Exception(f"fuse can be one of addition or division, got {fusion}")
+					row_dict[f"{k}_text"] = text_feature
+					row_dict[f"{k}_visual"] = visual_feature
 			else:
-				row_dict[f"{k}_text"] = text_feature
-				row_dict[f"{k}_visual"] = visual_feature
+				row_dict[f"{k}_attention"] = s["connectivity"][k]["attention"][connectivity_measure]
 
 		row_dict["split"] = "validation" if i < used_train_samples else "train"
 		row_dict["label"] = s["is_hallucinating"]
