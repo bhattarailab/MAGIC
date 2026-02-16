@@ -59,6 +59,7 @@ def process_sample(args):
 		text_matrices, visual_matrices = np.load(text_path), np.load(visual_path)
 	elif mode == "full":
 		attention_matrices = np.load(attention_path)
+		print(attention_matrices.keys())
 
 	# stores the connectivity value with key `layer_<layer>_head_<head>`
 	connectivity_value_dict = dict()
