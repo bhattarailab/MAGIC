@@ -61,7 +61,7 @@ if heads_log_path:
 		head_log = json.load(fp)
 
 	# represents the validation set that was used for head selection
-	used_train_samples = head_log["n_train_samples"]["total"]
+	used_train_samples = 0 if all_heads else head_log["n_train_samples"]["total"]
 	connectivity_measure = head_log["connectivity_measure"]
 	heads = ALl_HEADS_KEYS if all_heads else [f"layer_{l}_head_{h}" for l, h in head_log["selected_heads"]]
 	train_path, test_path = head_log["files"]["train"], head_log["files"]["test"]
