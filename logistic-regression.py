@@ -9,7 +9,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import re
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, average_precision_score
 
 parser = argparse.ArgumentParser(description="performs logistic regression on the given csv file")
 parser.add_argument("--csv", help="CSV file created using create-dataset.py")
@@ -169,7 +169,8 @@ else:
 	model.fit(sklearn_train_X, sklearn_train_y)
 	test_prob = model.predict_proba(sklearn_test_X)
 
-	score = roc_auc_score(sklearn_test_y, test_prob[:, 1])
+	auroc_score = roc_auc_score(sklearn_test_y, test_prob[:, 1])
+	aupr_score = average_precision_score(sklearn_test_y, test_prob[:1])
 	
 	coefficinets = model.coef_[0]
 	absolute_coefficients = np.abs(coefficinets)
@@ -181,7 +182,8 @@ else:
 	})
 	features_df.to_csv("./outputs/importances.csv")
 
-	print(f"Test AUROC = {score}")
+	print(f"Test AUROC = {auroc_score}")
+	print(f"Test AUPR = {aupr_score}")
 
 
 if has_breakpoint:
