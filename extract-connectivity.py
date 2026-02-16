@@ -46,7 +46,7 @@ print(f"Total samples number of samples = {len(metadata)}\n\n")
 # print(f"\tNumber of visual tokens = {n_visual_tokens}\n")
 
 def process_sample(args):
-	i, meta = args
+	i, meta, mode = args
 
 	visual_path, text_path = meta["visual_subgraphs_file"], meta["text_subgraphs_file"]
 	attention_path = meta["attention_file"]
@@ -92,7 +92,7 @@ def process_sample(args):
 	return i, connectivity_value_dict
 
 print(f"Number of workers = {num_workers}")
-tasks = [(i, meta) for i, meta in enumerate(metadata)]
+tasks = [(i, meta, mode) for i, meta in enumerate(metadata)]
 with ProcessPoolExecutor(max_workers=num_workers) as executor:
 	futures = [executor.submit(process_sample, t) for t in tasks]
 
