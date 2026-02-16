@@ -20,6 +20,7 @@ parser.add_argument("--mode", type=str, choices=[
 	"full"
 ], default="decomposed")
 parser.add_argument("--output", "-o", help="output path for pickle file, including the filename and extension")
+parser.add_argument("--n-workers", type=int, help="Number of workers")
 
 # parsing the user input
 args = parser.parse_args()
@@ -27,6 +28,7 @@ args = parser.parse_args()
 metadata_path = args.metadata_path
 output_path = args.output
 mode = args.mode
+num_workers = args.n_workers or os.cpu_count()-1
 connectivity_id = args.connectivity
 connectivity = get_connectivity_function(connectivity_id)
 
@@ -89,7 +91,6 @@ def process_sample(args):
 		
 	return i, connectivity_value_dict
 
-num_workers = os.cpu_count()-1
 print(f"Number of workers = {num_workers}")
 tasks = [(i, meta) for i, meta in enumerate(metadata)]
 with ProcessPoolExecutor(max_workers=num_workers) as executor:
