@@ -58,8 +58,12 @@ def process_sample(args):
 		# contains all the text and visual attention submatrices for all layers and heads
 		text_matrices, visual_matrices = np.load(text_path), np.load(visual_path)
 	elif mode == "full":
-		attention_matrices = np.load(attention_path)
-		print(attention_matrices.keys())
+		attention_matrix = np.load(attention_path)["arr_0"]
+		attention_matrices = dict()
+
+		for l in range(32):
+			for h in range(32):
+				attention_matrices[f"layer_{l}_head_{h}"] = attention_matrix[l][h]
 
 	# stores the connectivity value with key `layer_<layer>_head_<head>`
 	connectivity_value_dict = dict()
