@@ -170,7 +170,7 @@ else:
 	test_prob = model.predict_proba(sklearn_test_X)
 
 	auroc_score = roc_auc_score(sklearn_test_y, test_prob[:, 1])
-	aupr_score = average_precision_score(sklearn_test_y, test_prob[:1])
+	aupr_score = average_precision_score(sklearn_test_y, test_prob[:, 1])
 	
 	coefficinets = model.coef_[0]
 	absolute_coefficients = np.abs(coefficinets)
