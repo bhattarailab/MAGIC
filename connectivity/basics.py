@@ -6,6 +6,7 @@ def compute_gini(values):
 
 	# Handle edge cases
 	if n == 0 or np.sum(sorted_values) == 0:
+			breakpoint()
 			return 0.0
 	
 	index = np.arange(1, n+1)
