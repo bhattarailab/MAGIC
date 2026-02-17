@@ -9,6 +9,7 @@ def compute_gini(values):
 			breakpoint()
 			return 0.0
 	
+	breakpoint()
 	index = np.arange(1, n+1)
 	return (2*np.sum(index*sorted_values))/(n* np.sum(sorted_values)) - (n+1)/n
 
