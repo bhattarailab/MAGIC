@@ -48,7 +48,7 @@ if connectivity_pickle:
 			connectivity_sample = {}
 			for l in range(32):
 				for h in range(32):
-					for t in ["text", "visual"] if mode == "decomposed" else ["attention"]:
+					for t in ["text", "visual"] if mode == "decomposed" else ["atttention"]:
 						for c in connectivities:
 							key = f"layer_{l}_head_{h}_{c}_{t}"
 							connectivity_sample[key] = sample["connectivity"][f"layer_{l}_head_{h}"][t][c]
@@ -106,7 +106,7 @@ if heads_log_path:
 					row_dict[f"{k}_text"] = text_feature
 					row_dict[f"{k}_visual"] = visual_feature
 			else:
-				row_dict[f"{k}_attention"] = s["connectivity"][k]["attention"][connectivity_measure]
+				row_dict[f"{k}_attention"] = s["connectivity"][k]["atttention"][connectivity_measure]
 
 		row_dict["split"] = "validation" if i < used_train_samples else "train"
 		row_dict["label"] = s["is_hallucinating"]
@@ -116,21 +116,26 @@ if heads_log_path:
 	# for the test samples
 	for i, s in enumerate(test_samples):
 		row_dict = dict()
-
-		for k in heads:
+		if mode == "decomposed":
 			text_feature = s["connectivity"][k]["text"][connectivity_measure]
 			visual_feature = s["connectivity"][k]["visual"][connectivity_measure]
 
-			if fusion:
-				if fusion == "addition":
-					row_dict[f"{k}_feature"] = visual_wt*visual_feature+text_wt*text_feature
-				elif fusion == "division":
-					row_dict[f"{k}_feature"] = text_feature/(text_feature+visual_feature)
+			for k in heads:
+				text_feature = s["connectivity"][k]["text"][connectivity_measure]
+				visual_feature = s["connectivity"][k]["visual"][connectivity_measure]
+
+				if fusion:
+					if fusion == "addition":
+						row_dict[f"{k}_feature"] = visual_wt*visual_feature+text_wt*text_feature
+					elif fusion == "division":
+						row_dict[f"{k}_feature"] = text_feature/(text_feature+visual_feature)
+					else:
+						raise Exception(f"fuse can be one of addition or division, got {fusion}")
 				else:
-					raise Exception(f"fuse can be one of addition or division, got {fusion}")
+					row_dict[f"{k}_text"] = text_feature
+					row_dict[f"{k}_visual"] = visual_feature
 			else:
-				row_dict[f"{k}_text"] = text_feature
-				row_dict[f"{k}_visual"] = visual_feature
+				row_dict[f"{k}_attention"] = s["connectivity"][k]["atttention"][connectivity_measure]
 
 		row_dict["split"] = "test"
 		row_dict["label"] = s["is_hallucinating"]
