@@ -134,8 +134,8 @@ if heads_log_path:
 				else:
 					row_dict[f"{k}_text"] = text_feature
 					row_dict[f"{k}_visual"] = visual_feature
-			else:
-				row_dict[f"{k}_attention"] = s["connectivity"][k]["atttention"][connectivity_measure]
+		else:
+			row_dict[f"{k}_attention"] = s["connectivity"][k]["atttention"][connectivity_measure]
 
 		row_dict["split"] = "test"
 		row_dict["label"] = s["is_hallucinating"]
