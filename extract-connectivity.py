@@ -44,22 +44,14 @@ def process_sample(args):
 	attention_path = meta["attention_file"]
 	
 	text_matrices, visual_matrices = None, None
-	attention_matrices = None
+	attention_matrix = None
 
 	if mode == "decomposed":
 		# contains all the text and visual attention submatrices for all layers and heads
 		text_matrices, visual_matrices = np.load(text_path), np.load(visual_path)
 	elif mode == "full":
-		attention_matrix = np.load(attention_path)["arr_0"]
-		attention_matrices = dict()
-
-		for l in range(34):
-			for h in range(34):
-				try:
-					attention_matrices[f"layer_{l}_head_{h}"] = attention_matrix[l][h]
-				except:
-					continue
-
+		attention_matrix = np.load(attention_path)["arr_0"].astype(np.float32)
+	
 	# stores the connectivity value with key `layer_<layer>_head_<head>`
 	connectivity_value_dict = dict()
 
@@ -82,12 +74,9 @@ def process_sample(args):
 						"visual": visual_connectivity,
 					}
 
-				if attention_matrices:
-					attention_matrix = attention_matrices[key]
-					attention_matrix = attention_matrix.astype(np.float32)
-
+				if attention_matrix:
 					connectivity_value_dict[key] = {
-						"atttention": connectivity(attention_matrix)
+						"atttention": connectivity(attention_matrix[layer][head])
 					}	
 			except:
 				continue
