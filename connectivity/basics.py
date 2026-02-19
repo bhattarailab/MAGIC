@@ -11,13 +11,20 @@ def compute_gini(values):
 	index = np.arange(1, n+1)
 	return (2*np.sum(index*sorted_values))/(n* np.sum(sorted_values)) - (n+1)/n
 
-def compute_gini_old(values):
-	sorted_values = np.sort(values.flatten())
-	n = len(sorted_values)
+def compute_gini_traditional(values):
+	values = values.flatten()
 
-	print(np.sum(sorted_values))
-	index = np.arange(1, n+1)
-	return (2*np.sum(index*sorted_values))/(n* np.sum(sorted_values)) - (n+1)/n
+	if np.amin(values) < 0:
+		print(f"Warning non-negative values is not defined for GINI")
+		return 0.0
+	if np.sum(values) == 0:
+		print(f"Warning, all values received 0")
+		return 0.0
+	
+	n = len(values)
+	diff_sum = np.abs(values[:, None] - values[None, :]).sum()
+	
+	return diff_sum/(2*n**2*np.mean(values))
 
 def compute_basic_measures(matrix):
 	"""
@@ -37,7 +44,7 @@ def compute_basic_measures(matrix):
 	probs = probs/(probs.sum()+1e-10)
 	features["entropy"] = -np.sum(probs * np.log(probs+1e-10))
 	features["gini"] = compute_gini(matrix)
-	features["old-gini"] = compute_gini_old(matrix)
+	features["gini_traditional"] = compute_gini_traditional(matrix)
 	features["per_token_gini"] = np.mean([compute_gini(m) for m in matrix])
 	features["effective_rank"] = np.exp(features["entropy"])
 
