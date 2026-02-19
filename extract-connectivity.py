@@ -37,14 +37,6 @@ with open(metadata_path, "rb") as fp:
 
 print(f"Total samples number of samples = {len(metadata)}\n\n")
 
-# computing the median statistics
-# n_answer_tokens = np.array([np.load(m["visual_subgraphs_file"])["layer_0_head_0"].shape[0] for m in metadata]).mean()
-# n_query_tokens = np.array([np.load(m["text_subgraphs_file"])["layer_0_head_0"].shape[1] for m in metadata]).mean()
-# n_visual_tokens = np.array([np.load(m["visual_subgraphs_file"])["layer_0_head_0"].shape[1] for m in metadata]).mean()
-# print(f"\tNumber of answer tokens = {n_answer_tokens}")
-# print(f"\tNumber of query tokens = {n_query_tokens}")
-# print(f"\tNumber of visual tokens = {n_visual_tokens}\n")
-
 def process_sample(args):
 	i, meta, mode = args
 
@@ -61,38 +53,44 @@ def process_sample(args):
 		attention_matrix = np.load(attention_path)["arr_0"]
 		attention_matrices = dict()
 
-		for l in range(32):
-			for h in range(32):
-				attention_matrices[f"layer_{l}_head_{h}"] = attention_matrix[l][h]
+		for l in range(34):
+			for h in range(34):
+				try:
+					attention_matrices[f"layer_{l}_head_{h}"] = attention_matrix[l][h]
+				except:
+					continue
 
 	# stores the connectivity value with key `layer_<layer>_head_<head>`
 	connectivity_value_dict = dict()
 
-	n_layers, n_heads = 32, 32
+	n_layers, n_heads = 34, 34
 	for layer in range(n_layers):
 		for head in range(n_heads):
-			key = f"layer_{layer}_head_{head}"
+			try:
+				key = f"layer_{layer}_head_{head}"
 
-			if text_matrices or visual_matrices:
-				text_matrix, visual_matrix = text_matrices[key], visual_matrices[key]
-				# float 32 to prevent the scipy errors
-				text_matrix, visual_matrix = text_matrix.astype(np.float32), visual_matrix.astype(np.float32)
-				
-				# extracting the connectivity value for text and visual
-				text_connectivity, visual_connectivity = connectivity(text_matrix), connectivity(visual_matrix)
+				if text_matrices or visual_matrices:
+					text_matrix, visual_matrix = text_matrices[key], visual_matrices[key]
+					# float 32 to prevent the scipy errors
+					text_matrix, visual_matrix = text_matrix.astype(np.float32), visual_matrix.astype(np.float32)
+					
+					# extracting the connectivity value for text and visual
+					text_connectivity, visual_connectivity = connectivity(text_matrix), connectivity(visual_matrix)
 
-				connectivity_value_dict[key] = {
-					"text": text_connectivity,
-					"visual": visual_connectivity,
-				}
+					connectivity_value_dict[key] = {
+						"text": text_connectivity,
+						"visual": visual_connectivity,
+					}
 
-			if attention_matrices:
-				attention_matrix = attention_matrices[key]
-				attention_matrix = attention_matrix.astype(np.float32)
+				if attention_matrices:
+					attention_matrix = attention_matrices[key]
+					attention_matrix = attention_matrix.astype(np.float32)
 
-				connectivity_value_dict[key] = {
-					"atttention": connectivity(attention_matrix)
-				}	
+					connectivity_value_dict[key] = {
+						"atttention": connectivity(attention_matrix)
+					}	
+			except:
+				continue
 		
 	return i, connectivity_value_dict
 
