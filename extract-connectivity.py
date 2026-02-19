@@ -85,12 +85,16 @@ def process_sample(args):
 
 print(f"Number of workers = {num_workers}")
 tasks = [(i, meta, mode) for i, meta in enumerate(metadata)]
-with ProcessPoolExecutor(max_workers=num_workers) as executor:
-	futures = [executor.submit(process_sample, t) for t in tasks]
 
-	for fut in tqdm(as_completed(futures), total=len(futures), desc="Samples"):
-		i, connectivity_dict = fut.result()
-		metadata[i]["connectivity"] = connectivity_dict
+for i, meta, mode in tasks:
+	_, metadata[i]["connectivity"] = process_sample((i, meta, mode))
+
+# with ProcessPoolExecutor(max_workers=num_workers) as executor:
+# 	futures = [executor.submit(process_sample, t) for t in tasks]
+
+# 	for fut in tqdm(as_completed(futures), total=len(futures), desc="Samples"):
+# 		i, connectivity_dict = fut.result()
+# 		metadata[i]["connectivity"] = connectivity_dict
 
 with open(output_path, "wb") as fp:
 	pickle.dump(metadata, fp)
