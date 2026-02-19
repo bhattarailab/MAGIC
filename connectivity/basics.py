@@ -44,7 +44,7 @@ def compute_basic_measures(matrix):
 	probs = probs/(probs.sum()+1e-10)
 	features["entropy"] = -np.sum(probs * np.log(probs+1e-10))
 	features["gini"] = compute_gini(matrix)
-	features["gini_traditional"] = compute_gini_traditional(matrix)
+	# features["gini_traditional"] = compute_gini_traditional(matrix)
 	features["per_token_gini"] = np.mean([compute_gini(m) for m in matrix])
 	features["effective_rank"] = np.exp(features["entropy"])
 
