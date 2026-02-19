@@ -78,9 +78,7 @@ def process_sample(args):
 					connectivity_value_dict[key] = {
 						"atttention": connectivity(attention_matrix[layer][head])
 					}	
-					print("done")
-			except Exception as e:
-				print(e)
+			except:
 				continue
 		
 	return i, connectivity_value_dict

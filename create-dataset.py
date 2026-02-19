@@ -50,7 +50,7 @@ elif mode == "text":
 elif mode == "visual":
 	to_extract = ["visual"]
 elif mode == "full":
-	to_extract = ["attention"]
+	to_extract = ["atttention"]
 
 # extracting the connectivity for both the files
 connectivity_list = []

@@ -1,29 +1,30 @@
 import os
-#os.environ["TOKENIZERS_PARALLELISM"] = "false"
-#os.environ["HF_HOME"]="/scratch/sacharya"
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["HF_HOME"]="/scratch/noli1"
 import torch
-from transformers import AutoProcessor, AutoModelForImageTextToText
+#from transformers import AutoProcessor, AutoModelForImageTextToText
 from transformers import AutoProcessor, LlavaForConditionalGeneration
 from transformers import AutoTokenizer, AutoModel
-# from llava.model import LlavaMistralForCausalLM
-# from llava.conversation import conv_templates, SeparatorStyle
-# from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+from llava.model import LlavaMistralForCausalLM
+from llava.conversation import conv_templates, SeparatorStyle
+from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor, GenerationConfig
 import textwrap
 from io import BytesIO
 import requests
 import torch
-# from llava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
-# from llava.conversation import SeparatorStyle, conv_templates
-# from llava.mm_utils import (
-#     KeywordsStoppingCriteria,
-#     get_model_name_from_path,
-#     process_images,
-#     tokenizer_image_token,
-# )
-# from llava.model.builder import load_pretrained_model
-# from llava.utils import disable_torch_init
+from llava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
+from llava.conversation import SeparatorStyle, conv_templates
+from llava.mm_utils import (
+    KeywordsStoppingCriteria,
+    get_model_name_from_path,
+    process_images,
+    tokenizer_image_token,
+)
+from llava.model.builder import load_pretrained_model
+from llava.utils import disable_torch_init
 from PIL import Image
 import warnings # Added to suppress a warning from PIL
 torch.cuda.empty_cache()
@@ -39,6 +40,9 @@ import random
 #model_name = "medgemma-4b-it"
 from transformers import set_seed as hf_set_seed
 import gc
+import argparse
+
+
 def clear_cuda():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -112,7 +116,8 @@ def load_models(model_name):
         #breakpoint()
         return model, tokenizer,image_processor,context_len
     if model_name=="CheXagent":
-        tokenizer = AutoProcessor.from_pretrained("StanfordAIMI/CheXagent-8b", trust_remote_code=True)
+        tokenizer = AutoProcessor.fr
+        om_pretrained("StanfordAIMI/CheXagent-8b", trust_remote_code=True)
         generation_config = GenerationConfig.from_pretrained("StanfordAIMI/CheXagent-8b")
         
         model = AutoModelForCausalLM.from_pretrained("StanfordAIMI/CheXagent-8b", trust_remote_code=True,torch_dtype=torch.float16, 
@@ -154,7 +159,8 @@ def get_token_type_indices(input_ids, generated_ids, attention_seq_len, image_to
     Returns:
         Dictionary with visual, text, and answer token indices in attention space
     """
-    placeholder_mask = (input_ids == image_token_id)
+    placeholder_mask = (input_ids ==
+                         image_token_id)
     placeholder_positions = placeholder_mask.nonzero(as_tuple=True)[1]
     num_placeholders = len(placeholder_positions)
     input_seq_len = input_ids.shape[1]
@@ -222,56 +228,56 @@ def process_weights(model, processor, image_processor,context_len,image, questio
 #             stopping_criteria=[stopping_criteria],
 #         )
         #breakpoint()
-        # with torch.no_grad():
-        #     for step in range(max_new_tokens):
-        #         # Forward pass
-        #         #breakpoint
-        #         output = model(
-        #         generated_ids,
-        #         output_attentions=True,
-        #         images=image_tensor.unsqueeze(0).half().cuda(),
-        #         use_cache=True)
-        #         next_token_logits = output.logits[:, -1, :]
-        #         next_token_id = torch.argmax(next_token_logits, dim=-1, keepdim=True)
-        #         if next_token_id.item() == processor.eos_token_id:
-        #             break
-        #         generated_ids = torch.cat([generated_ids, next_token_id], dim=1)
-        # prompt_len = input_ids.shape[-1]
-        # answer_ids = generated_ids[0][prompt_len:]
-        # print(processor.decode(answer_ids))
-        # breakpoint()
         with torch.no_grad():
-            #for step in range(max_new_tokens):
+            for step in range(max_new_tokens):
                 # Forward pass
                 #breakpoint
-            generated_ids = model.generate(
-            input_ids,
-            images=image_tensor.unsqueeze(0).half().cuda(),
-            do_sample=False,
-            max_new_tokens=max_new_tokens,
-            temperature=0.0,
-            #pad_token_id=processor.eos_token_id,
-            use_cache=True,
-            stopping_criteria=[stopping_criteria],
-        )
-            #breakpoint()
-            prompt_len = input_ids.shape[-1]
-            #generate_len = generated_ids.shape[-1]
-            #num_new_tok1ens = generate_len - prompt_len
-            #pure_answer_tokens = generated_ids[:, -num_new_tokens:]
-            sequence = torch.cat([input_ids, generated_ids], dim=1)
-            output = model(
-            sequence,
-            images=image_tensor.unsqueeze(0).half().cuda(),
-            output_attentions=True,
-            use_cache=False
-        )
+                output = model(
+                generated_ids,
+                output_attentions=True,
+                images=image_tensor.unsqueeze(0).half().cuda(),
+                use_cache=True)
+                next_token_logits = output.logits[:, -1, :]
+                next_token_id = torch.argmax(next_token_logits, dim=-1, keepdim=True)
+                if next_token_id.item() == processor.eos_token_id:
+                    break
+                generated_ids = torch.cat([generated_ids, next_token_id], dim=1)
+        prompt_len = input_ids.shape[-1]
+        answer_ids = generated_ids[0][prompt_len:]
+        print(processor.decode(answer_ids))
+        # breakpoint()
+        # with torch.no_grad():
+        #     #for step in range(max_new_tokens):
+        #         # Forward pass
+        #         #breakpoint
+        #     generated_ids = model.generate(
+        #     input_ids,
+        #     images=image_tensor.unsqueeze(0).half().cuda(),
+        #     do_sample=False,
+        #     max_new_tokens=max_new_tokens,
+        #     temperature=0.0,
+        #     #pad_token_id=processor.eos_token_id,
+        #     use_cache=True,
+        #     stopping_criteria=[stopping_criteria],
+        # )
+        #     #breakpoint()
+        #     prompt_len = input_ids.shape[-1]
+        #     #generate_len = generated_ids.shape[-1]
+        #     #num_new_tok1ens = generate_len - prompt_len
+        #     #pure_answer_tokens = generated_ids[:, -num_new_tokens:]
+        #     sequence = torch.cat([input_ids, generated_ids], dim=1)
+        #     output = model(
+        #     sequence,
+        #     images=image_tensor.unsqueeze(0).half().cuda(),
+        #     output_attentions=True,
+        #     use_cache=False
+        # )
         attention=output.attentions
         #breakpoint()
         attention_seq_len = output.attentions[0].shape[-1]
         indices = get_token_type_indices(
     input_ids=input_ids,
-    generated_ids=sequence,
+    generated_ids=generated_ids,
     attention_seq_len=attention_seq_len
 )
         #breakpoint()
@@ -298,12 +304,12 @@ def process_weights(model, processor, image_processor,context_len,image, questio
         attention = [attn[0].cpu().numpy() for attn in output.attentions]
         #breakpoint()
         prompt_len = input_ids.shape[-1]
-        # answer_ids = generated_ids[0][prompt_len:]
-        answer_ids=generated_ids[0]
+        answer_ids = generated_ids[0][prompt_len:]
+        #answer_ids=generated_ids[0]
         answer = processor.decode(answer_ids, skip_special_tokens=True).strip()
-        sequence=sequence.detach().cpu().numpy()
+        #sequence=sequence.detach().cpu().numpy()
         #breakpoint()
-        return answer, attention,visual_subgraphs,text_subgraphs,visual_token_indices,text_token_indices,answer_token_indices,sequence
+        return answer, attention,visual_subgraphs,text_subgraphs,visual_token_indices,text_token_indices,answer_token_indices,None
     
     if model_name=="medgemma-4b-it":
         prompt = "Answer the question as concisely as possible: " + question
@@ -471,8 +477,12 @@ def normalize_yes_no(text: str):
         return "no"
     return text  
 
+def load_image(path: str):
+    with Image.open(path) as img:
+        return img.convert("RGB")
+
 def process_dataset(model_name, model, processor, image_processor=None, context_len=None,
-                    dataset="flaviagiammarino/vqa-rad", split='train', num_samples=10):
+                    dataset="flaviagiammarino/vqa-rad", split='train', from_index=0, to_index=int(1e12)):
 
     """0
    
@@ -484,19 +494,25 @@ def process_dataset(model_name, model, processor, image_processor=None, context_
         num_samples: Number of samples to process
     """
     import time
-    save_folder=f"/scratch/sacharya/graph_hallucination_detection/results/{model_name}_{split}_Feb12_{dataset.split('/')[-1]}"
+    save_folder=f"/scratch/noli1/graph_hallucination_detection/results/{model_name}_{split}_Feb17_{dataset.split('/')[-1]}"
     os.makedirs(save_folder,exist_ok=True)
     dataset = load_dataset(dataset, split=split)
+    n_dataset = len(dataset)
+    # which ever is the smallest
+    to_index = min(to_index, n_dataset)
+
     results = []
     count=0
-    for idx in range(min(num_samples, len(dataset))):
-        #print(idx)
+    for idx in range(from_index, to_index+1):
         start = time.perf_counter()
         sample = dataset[idx]
         image = sample['image']
+        if type(image) is str:
+            image = load_image(f"/scratch/noli1/kvasir_images/{sample['img_id']}.jpg")
+
         pope_prompt =  sample['question']
         ground_truth=sample['answer']
-        print(f"Processing sample {idx + 1}/{num_samples}")
+        print(f"Processing sample {idx-from_index+1}/{to_index-from_index+1}")
         print(f"Question: {pope_prompt}")
         print(f"Ground truth: {ground_truth}")
         # if ground_truth.lower().strip() not in ['yes','no']:
@@ -556,69 +572,49 @@ def process_dataset(model_name, model, processor, image_processor=None, context_
 
 image_path = "/work/FAC/HEC/DESI/yshresth/aim/sacharya/hallucination_aware_fine_tunning/Kavasir/kvasir-dataset-v2/dyed-lifted-polyps/0a7bdce4-ac0d-44ef-93ee-92dfc8fe0b81.jpg"
 question = "What is the image about?"
-import argparse
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Vision-Language Attention Extraction")
-
-    parser.add_argument(
-        "--model",
-        type=str,
-        required=True,
-        choices=[
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", help="huggingface daaset id")
+    parser.add_argument ("--split", help="split for the dataset")
+    parser.add_argument("--from_index", help="from index", type=int, default=0)
+    parser.add_argument("--to_index", help="to index: if empty than all", type=int)
+    parser.add_argument("--n-samples", help="total number of samples", type=int, default=int(1e12))
+    parser.add_argument("--model", type=str,
+      choices=[
             "LLAVA-1.5-7b-hf",
             "Qwen2.5-VL-3B-Instruct",
             "llava-med-v1.5-mistral-7b",
             "CheXagent",
             "medgemma-4b-it",
-        ],
-        help="Model name"
+      ],
+      default="llava-med-v1.5-mistral-7b"
     )
 
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        default="flaviagiammarino/vqa-rad",
-        help="HuggingFace dataset name"
-    )
+    args = parser.parse_args()
+    dataset, split = args.dataset, args.split
+    from_index, to_index = args.from_index, args.to_index
+    n_samples = args.n_samples
+    model_name = args.model
 
-    parser.add_argument(
-        "--split",
-        type=str,
-        default="test",
-        help="Dataset split (train/validation/test)"
-    )
+    if to_index is None:
+      # if end is not given then, end is the n_samples from the start
+      to_index = from_index + n_samples
 
-    parser.add_argument(
-        "--num_samples",
-        type=int,
-        default=100,
-        help="Number of samples to process"
-    )
+    if from_index > to_index:
+        raise Exception(f"From index cannot be greater than to index, got {from_index}>{to_index}")
+    elif (to_index-from_index) > n_samples:
+        raise Exception(f"Not enough samples between from and to index, got {n_samples} to take from index {from_index} to {to_index}")
 
-    # parser.add_argument(
-    #     "--save_result",
-    #     action="store_true",
-    #     help="Whether to save results"
-    # )
-
-    # parser.add_argument(
-    #     "--load_result",
-    #     action="store_true",
-    #     help="Whether to load saved results"
-    # )
     save_result=True
     load_result=False
-    args = parser.parse_args()
-
-    # Assign global model_name so existing functions still work
-    model_name = args.model
 
     if save_result:
         print(f"Running model: {model_name}")
-        print(f"Dataset: {args.dataset}")
-        print(f"Split: {args.split}")
-        print(f"Num samples: {args.num_samples}")
+        print(f"Dataset: {dataset}")
+        print(f"Split: {split}")
+        print(f"Start Index: {from_index}")
+        print(f"End Index: {to_index}")
 
         model, processor, image_processor, context_len = load_models(model_name)
 
@@ -628,9 +624,10 @@ if __name__ == "__main__":
             processor,
             image_processor,
             context_len,
-            dataset=args.dataset,
-            split=args.split,
-            num_samples=args.num_samples
+            dataset=dataset,
+            split=split,
+            from_index=from_index,
+            to_index=to_index,
         )
 
     if load_result:
