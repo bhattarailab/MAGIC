@@ -22,6 +22,7 @@ assert(len(new_data) == len(old_data))
 incorrect_total_question_mismatch = 0
 incorrect_prediction_for_matched = 0
 incorrect_prediction_hallucination_not_matched = 0
+correct_prediction_hallucination_not_matched = 0
 total_matched = 0
 for old_index, old_sample in enumerate(old_data):
 	for new_index, new_sample in enumerate(new_data):
@@ -37,6 +38,8 @@ for old_index, old_sample in enumerate(old_data):
 						incorrect_prediction_hallucination_not_matched += 1
 				else:
 					total_matched+=1
+					if old_sample["is_hallucinating"] != new_sample["is_hallucinating"]:
+						correct_prediction_hallucination_not_matched += 1
 			else:
 				incorrect_total_question_mismatch+=1
 			break
@@ -47,4 +50,5 @@ print(f"Total samples = {len(old_data)}")
 print(f"Total matches = {total_matched}")
 print(f"Total incorrect question mismatch but attention file name match = {incorrect_total_question_mismatch}")
 print(f"Total question and attention name matched but precition doesnot matches = {incorrect_prediction_for_matched}")
+print(f"Total answer correct but hallucination mismsatch = {correct_prediction_hallucination_not_matched}")
 print(f"Total incorrect prediction plus hallucination mismatch = {incorrect_prediction_hallucination_not_matched}")
