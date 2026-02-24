@@ -84,6 +84,9 @@ for seed in SEEDS:
 	print(f"\tTest AUROC = {auroc_score}")
 	print(f"\tTest AUPR = {aupr_score}\n")
 
+	all_aupr.append(aupr_score)
+	all_auroc.append(auroc_score)
+
 all_auroc, all_aupr = np.array(all_auroc), np.array(all_aupr)
 print(f"Mean auroc: {np.mean(all_auroc):.4f} with std. deviation {np.std(all_auroc):.4f}")
 print(f"Mean aupr: {np.mean(all_aupr):.4f} with std. deviation {np.std(all_aupr):.4f}")
