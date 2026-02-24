@@ -1,4 +1,6 @@
 import torch
+import os
+import random
 import numpy as np
 import pandas as pd
 import argparse
@@ -14,6 +16,12 @@ csv_path = args.csv
 has_breakpoint = args.breakpoint
 
 SEEDS = [42, 21, 23, 12, 123]
+
+def set_seed(seed: int, deterministic: bool = True) -> None:
+	random.seed(seed)
+	os.environ["PYTHONHASHSEED"] = str(seed)
+	np.random.seed(seed)
+	torch.manual_seed(seed)
 
 class ConnectivityVectorDataset(torch.utils.data.Dataset):
 	def __init__(self, csv_path, split="train"):
@@ -31,16 +39,6 @@ class ConnectivityVectorDataset(torch.utils.data.Dataset):
 	def __getitem__(self, index):
 		return torch.tensor(self.X[index], dtype=torch.float32), torch.tensor(1.0 if self.y[index] else 0.0, dtype=torch.float32).reshape((1,))
 
-# intialziign train and test dataset from the pickles path
-train_set = ConnectivityVectorDataset(csv_path, split="train")
-test_set = ConnectivityVectorDataset(csv_path, split="test")
-
-# feature size controls the weight parameter for the model
-n_features = len(train_set.feature_columns)
-
-# creating dataloader with batching
-train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True)
-test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False)
 
 def dataset_to_numpy(dataset):
 	ret_x, ret_y = [], []
@@ -54,6 +52,21 @@ all_auroc = []
 all_aupr = []
 
 for seed in SEEDS:
+	set_seed(seed)
+
+	# intialziign train and test dataset from the pickles path
+	train_set = ConnectivityVectorDataset(csv_path, split="train")
+	test_set = ConnectivityVectorDataset(csv_path, split="test")
+
+	# feature size controls the weight parameter for the model
+	n_features = len(train_set.feature_columns)
+
+	# creating dataloader with batching
+	g = torch.Generator()
+	g.manual_seed(seed)
+	train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True, generator=g)
+	test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False, generator=g)
+
 	# initializing the model
 	model = LogisticRegression(max_iter=2_000, class_weight="balanced", random_state=seed)
 	# for debugging
