@@ -2,32 +2,18 @@ import torch
 import numpy as np
 import pandas as pd
 import argparse
-from models.simple_logistic import SimpleLogisticRegression
-from models.linear_logistic import LinearLogisticRegression
-from utils.model import compute_test_metrices
-import seaborn as sns
-import matplotlib.pyplot as plt
-import re
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, average_precision_score
 
 parser = argparse.ArgumentParser(description="performs logistic regression on the given csv file")
 parser.add_argument("--csv", help="CSV file created using create-dataset.py")
-parser.add_argument("--device", help="device to run the model", default="cuda")
-parser.add_argument("--epoch", help="Epoch for training the model", default=50, type=int)
-parser.add_argument("--weight-path", help="Path where the weights of neuron is to be saved")
-parser.add_argument("--heatmap-name", help="Store the weight in form of heatmap, input should be the name of heatmap")
 parser.add_argument("--breakpoint", "-b", help="have breakpoint after execution better for testing")
-parser.add_argument("--model", help="option to choose the model")
-parser.add_argument("--n-train", help="number of train samples", type=int, default=0)
 
 args = parser.parse_args()
-csv_path, device = args.csv, args.device
-epoch = args.epoch
-weight_path, heatmap = args.weight_path, args.heatmap_name
+csv_path = args.csv
 has_breakpoint = args.breakpoint
-model_type = args.model
-n_train = args.n_train
+
+SEEDS = [42, 21, 23, 12, 123]
 
 class ConnectivityVectorDataset(torch.utils.data.Dataset):
 	def __init__(self, csv_path, split="train"):
@@ -56,135 +42,51 @@ n_features = len(train_set.feature_columns)
 train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True)
 test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False)
 
-# initializing the model
-if model_type == "linear":
-	model = LinearLogisticRegression(n_features).to(device=device)
-elif model_type == "scikit-learn":
-	model = LogisticRegression(max_iter=2_000, class_weight="balanced", random_state=42)
-else:
-	model = SimpleLogisticRegression(n_features).to(device=device)
+def dataset_to_numpy(dataset):
+	ret_x, ret_y = [], []
+	for X, y in dataset:
+		ret_x.append(X)
+		ret_y.append(y.item())
 
-# for debugging
-print(model)
+	return np.array(ret_x), np.array(ret_y)
 
-if not model_type == "scikit-learn":
-	criterion = torch.nn.BCELoss()
-	optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+all_auroc = []
+all_aupr = []
 
-	# training the model for 100 epoch
-	best_test_auroc = 0
-	best_model_bias, best_model_weight = None, None
+for seed in SEEDS:
+	# initializing the model
+	model = LogisticRegression(max_iter=2_000, class_weight="balanced", random_state=seed)
+	# for debugging
+	print(model)
 
-	for e in range(epoch):
-		model.train()
-		total_loss = 0.0
-
-		for inputs, targets in train_dataloader:
-			inputs, targets = inputs.to(device), targets.to(device)
-
-			optimizer.zero_grad()
-			outputs = model(inputs)
-			loss = criterion(outputs, targets)
-			loss.backward()
-			optimizer.step()
-
-			total_loss+=loss.item()
-
-		train_metrics = compute_test_metrices(model=model, dataloader=train_dataloader, criterion=criterion, device=device)
-		test_metrics = compute_test_metrices(model=model, dataloader=test_dataloader, criterion=criterion, device=device)
-
-		if test_metrics["auroc"] > best_test_auroc:
-			pass
-			# best_model_weight = model.linear.weight.data
-			# best_model_bias = model.linear.bias.data
-
-		print(f"For epoch={e+1},")
-		print(f"\ttrain auroc = {train_metrics["auroc"]}, train_loss = {train_metrics["loss"]}")
-		print(f"\ttest auroc = {test_metrics["auroc"]}, test_loss = {test_metrics["loss"]}\n\n")
-
-
-	def df_to_matrix(dataframe):
-		matrix = np.zeros((32, 32))
-
-		for key in dataframe["keys"]:
-			l, h = re.match(r"layer_(\d+)_head_(\d+)_\w*").groups()
-			matrix[l][h] = dataframe.loc[dataframe["key"] == key, "weight"].iloc[0]
-
-		return matrix
-
-	def save_heatmap(matrix, name, title):
-		sns.heatmap(matrix, cbar=True)
-		plt.title(title)
-		plt.xlabel("head")
-		plt.ylabel("layer")
-		plt.tight_layout()
-		plt.savefig(f"./outputs/heatmaps/name.png")
-
-	if weight_path or heatmap:
-		df = pd.DataFrame({
-			"keys": train_set.feature_columns,
-			"weights": best_model_weight.cpu().detach().flatten(),
-		})
-
-		if weight_path:
-			df.to_csv(weight_path)
-
-		if len(df["keys"]) < 32*32:
-			raise Exception("All layers and heads are not provided")
-		
-		if heatmap:
-			# if text and vision are fused then, there will be one heatmap <name>.png
-			# else, there will be three heatmaps; <name>-text.png, <name>-visual.png, <name>-fused.png
-			if df["keys"].values[0].endswith("_feature"):
-				heatmap_matrix = df_to_matrix(df)
-				save_heatmap(heatmap_matrix, name=heatmap, title="Heatmap for fused")
-			else:
-				subdf_text = df[df["keys"].str.endswith("text", na=False)]
-				subdf_visual = df[df["keys"].str.endswith("visual", na=False)]
-				
-				text_matrix = df_to_matrix(subdf_text)
-				visual_matrix = df_to_matrix(subdf_visual)
-				fused_matrix = (text_matrix+visual_matrix)/2
-
-				save_heatmap(text_matrix, name=f"{heatmap}_text", title="Heatmap for text")
-				save_heatmap(visual_matrix, name=f"{heatmap}_visual", title="Heatmap for visual")
-				save_heatmap(fused_matrix, name=f"{heatmap}_fused", title="Heatmap for fused")
-else:
-	def dataset_to_numpy(dataset):
-		ret_x, ret_y = [], []
-		for X, y in dataset:
-			ret_x.append(X)
-			ret_y.append(y.item())
-
-		return np.array(ret_x), np.array(ret_y)
 
 	# creating the tran and test set as per the requirement of sklearn
 	sklearn_train_X, sklearn_train_y = dataset_to_numpy(train_set)
 	sklearn_test_X, sklearn_test_y = dataset_to_numpy(test_set)
-
-	# using only a subset of the dataset
-	if n_train:
-		sklearn_train_X, sklearn_train_y = sklearn_train_X[:n_train], sklearn_train_y[:n_train]
 
 	model.fit(sklearn_train_X, sklearn_train_y)
 	test_prob = model.predict_proba(sklearn_test_X)
 
 	auroc_score = roc_auc_score(sklearn_test_y, test_prob[:, 1])
 	aupr_score = average_precision_score(sklearn_test_y, test_prob[:, 1])
-	
-	coefficinets = model.coef_[0]
-	absolute_coefficients = np.abs(coefficinets)
-	descending_indices = np.argsort(absolute_coefficients)[::-1]
-	top_features = np.array(train_set.feature_columns)[descending_indices]
-	features_df = pd.DataFrame({
-		"key": train_set.feature_columns,
-		"coeffecients": coefficinets,
-	})
-	features_df.to_csv("./outputs/importances.csv")
 
-	print(f"Test AUROC = {auroc_score}")
-	print(f"Test AUPR = {aupr_score}")
+	# coefficinets = model.coef_[0]
+	# absolute_coefficients = np.abs(coefficinets)
+	# descending_indices = np.argsort(absolute_coefficients)[::-1]
+	# top_features = np.array(train_set.feature_columns)[descending_indices]
+	# features_df = pd.DataFrame({
+	# 	"key": train_set.feature_columns,
+	# 	"coeffecients": coefficinets,
+	# })
+	# features_df.to_csv("./outputs/importances.csv")
 
+	print(f"For seed = {seed}")
+	print(f"\tTest AUROC = {auroc_score}")
+	print(f"\tTest AUPR = {aupr_score}\n")
+
+all_auroc, all_aupr = np.array(all_auroc), np.array(all_aupr)
+print(f"Mean auroc: {np.mean(all_auroc):.4f} with std. deviation {np.std(all_auroc):.4f}")
+print(f"Mean aupr: {np.mean(all_aupr):.4f} with std. deviation {np.std(all_aupr):.4f}")
 
 if has_breakpoint:
 	breakpoint()
