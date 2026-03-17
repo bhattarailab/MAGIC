@@ -40,8 +40,8 @@ def compute_attention_mtopdiv(
     """
     Compute MTopDiv for a single attention matrix.
     """
-    prompt_length = params["prompt_length"]
-    response_length = attn.shape[-1]-prompt_length
+    prompt_len= params["prompt_len"]
+    response_length = attn.shape[-1]-prompt_len
 
     distance_matrix = transform_attention_scores_to_distances(attn)
     distance_matrix[:-response_length, :-response_length] = 0.0
