@@ -46,16 +46,21 @@ print(f"Total samples number of samples = {len(metadata)}\n\n")
 def process_sample(args):
 	i, meta, mode = args
 
-	visual_path, text_path = meta["visual_subgraphs_file"], meta["text_subgraphs_file"]
-	attention_path = meta["attention_file"]
-	
 	text_matrices, visual_matrices = None, None
 	attention_matrix = None
 
 	if mode == "decomposed":
 		# contains all the text and visual attention submatrices for all layers and heads
+		visual_path, text_path = meta["visual_subgraphs_file"], meta["text_subgraphs_file"]
 		text_matrices, visual_matrices = np.load(text_path), np.load(visual_path)
 	elif mode == "full":
+		if "attnetion_file" in meta:
+			attention_path = meta["attention_file"]
+		elif "attn_save_path" in meta:
+			attention_path = meta["attn_save_path"]
+		else:
+			raise Exception(f"No attention file key exists in meta, got {meta.keys()}")
+		
 		attention_matrix = np.load(attention_path)["arr_0"].astype(np.float32)
 	
 	# stores the connectivity value with key `layer_<layer>_head_<head>`
