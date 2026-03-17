@@ -61,7 +61,13 @@ def process_sample(args):
 		else:
 			raise Exception(f"No attention file key exists in meta, got {meta.keys()}")
 		
-		attention_matrix = np.load(attention_path)["arr_0"].astype(np.float32)
+		attention_npx = np.load(attention_path)
+		if "arr_0" in attention_npx:
+			attention_matrix = attention_npx["arr_0"]
+		elif "full_attn" in attention_npx:
+			attention_matrix = attention_npx["full_attn"]
+		
+		attention_matrix = attention_matrix.astype(np.float32)
 	
 	# stores the connectivity value with key `layer_<layer>_head_<head>`
 	connectivity_value_dict = dict()
