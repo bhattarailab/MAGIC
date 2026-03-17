@@ -1,4 +1,5 @@
 import pickle
+import json
 import numpy as np
 import argparse
 from tqdm import tqdm
@@ -33,7 +34,12 @@ connectivity_id = args.connectivity
 connectivity = get_connectivity_function(connectivity_id)
 
 with open(metadata_path, "rb") as fp:
-	metadata = pickle.load(fp)
+	if metadata_path.endswith(".pkl"):
+		metadata = pickle.load(fp)
+	elif metadata_path.endswith(".json"):
+		metadata = json.load(fp)
+	else:
+		raise Exception("Unsupported file format encountered")
 
 print(f"Total samples number of samples = {len(metadata)}\n\n")
 
@@ -55,6 +61,11 @@ def process_sample(args):
 	# stores the connectivity value with key `layer_<layer>_head_<head>`
 	connectivity_value_dict = dict()
 
+	# parameter for the different computations
+	params = {
+		"prompt_len": meta.get("prompt_len", None),
+	}
+
 	n_layers, n_heads = 34, 34
 	for layer in range(n_layers):
 		for head in range(n_heads):
@@ -67,7 +78,7 @@ def process_sample(args):
 					text_matrix, visual_matrix = text_matrix.astype(np.float32), visual_matrix.astype(np.float32)
 					
 					# extracting the connectivity value for text and visual
-					text_connectivity, visual_connectivity = connectivity(text_matrix), connectivity(visual_matrix)
+					text_connectivity, visual_connectivity = connectivity(text_matrix, **params), connectivity(visual_matrix, **params)
 
 					connectivity_value_dict[key] = {
 						"text": text_connectivity,
@@ -76,7 +87,7 @@ def process_sample(args):
 
 				if attention_matrix is not None:
 					connectivity_value_dict[key] = {
-						"atttention": connectivity(attention_matrix[layer][head].astype(np.float32))
+						"atttention": connectivity(attention_matrix[layer][head].astype(np.float32), **params)
 					}	
 			except:
 				continue
