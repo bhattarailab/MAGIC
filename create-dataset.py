@@ -9,27 +9,19 @@ parser = argparse.ArgumentParser(description="Script to create the dataset for l
 parser.add_argument("--breakpoint", "-b", help="breakpoint at end for debugging", action="store_true")
 parser.add_argument("--pickle", nargs=2, help="creates dataset using the connectivity pickle i.e. output of extract connectivity, two arguments should be provided first one is train second is test")
 parser.add_argument("--name", default="dataset", help="name for the dataset optional", required=True)
-parser.add_argument("--connectivity", default=["gini"], nargs="+", help="connectivity measures")
-parser.add_argument("--mode", type=str, choices=[
-	"decomposed",
-	"full",
-	"text",
-	"visual"
-], default="decomposed")
+parser.add_argument("--connectivity", default="lookback", choices=["lookback", "mtopdiv"], help="connectivity measures")
 
 args = parser.parse_args()
 has_breakpoint = args.breakpoint
 connectivity_pickle = args.pickle
-connectivities = args.connectivity
+connectivity = args.connectivity
 name = args.name
-mode = args.mode
 
 train_pickle, test_pickle = connectivity_pickle
 
 # printing the data for logs
 print(f"Train Pickle = {train_pickle}")
 print(f"Test Pickle = {test_pickle}")
-print(f"Selected Mode = {mode} and will be saved in /outputs/{name}.csv")
 
 # loading from the pickle
 with open(train_pickle, "rb") as fp:
@@ -40,19 +32,8 @@ with open(test_pickle, "rb") as fp:
 # printing for the logs
 print(f"Loaded train data with {len(train_data)} samples")
 print(f"Loaded test data with {len(test_data)} samples")
+print(f"Connectivity being measured = {connectivity}")
 
-# what to extract
-to_extract = None
-if mode == "decomposed":
-	to_extract = ["text", "visual"]
-elif mode == "text":
-	to_extract = ["text"]
-elif mode == "visual":
-	to_extract = ["visual"]
-elif mode == "full":
-	to_extract = ["atttention"]
-
-# extracting the connectivity for both the files
 connectivity_list = []
 for split, split_sample in zip(["train", "test"], [train_data, test_data]):
 	for sample in split_sample:
@@ -60,10 +41,8 @@ for split, split_sample in zip(["train", "test"], [train_data, test_data]):
 		for l in range(34):
 			for h in range(34):
 				try:
-					for t in to_extract:
-						for c in connectivities:
-							key = f"layer_{l}_head_{h}_{c}_{t}"
-							connectivity_sample[key] = sample["connectivity"][f"layer_{l}_head_{h}"][t][c]
+					key = f"layer_{l}_head_{h}"
+					connectivity_sample[key] = sample["features"][f"layer_{l}_head_{h}"][connectivity]
 				except:
 					continue
 
