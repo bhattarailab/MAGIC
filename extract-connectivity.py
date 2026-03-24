@@ -98,7 +98,7 @@ def process_sample(args):
 
 				if attention_matrix is not None:
 					connectivity_value_dict[key] = {
-						"atttention": connectivity(attention_matrix[layer][head].astype(np.float32), **params)
+						"features": connectivity(attention_matrix[layer][head].astype(np.float32), **params)
 					}	
 			except:
 				continue

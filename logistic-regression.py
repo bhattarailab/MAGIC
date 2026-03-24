@@ -83,16 +83,6 @@ for seed in SEEDS:
 	auroc_score = roc_auc_score(sklearn_test_y, test_prob[:, 1])
 	aupr_score = average_precision_score(sklearn_test_y, test_prob[:, 1])
 
-	# coefficinets = model.coef_[0]
-	# absolute_coefficients = np.abs(coefficinets)
-	# descending_indices = np.argsort(absolute_coefficients)[::-1]
-	# top_features = np.array(train_set.feature_columns)[descending_indices]
-	# features_df = pd.DataFrame({
-	# 	"key": train_set.feature_columns,
-	# 	"coeffecients": coefficinets,
-	# })
-	# features_df.to_csv("./outputs/importances.csv")
-
 	print(f"For seed = {seed}")
 	print(f"\tTest AUROC = {auroc_score}")
 	print(f"\tTest AUPR = {aupr_score}\n")
