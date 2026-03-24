@@ -1,72 +1,31 @@
-from sklearn.metrics import roc_auc_score
-import numpy as np
+from sklearn.metrics import roc_auc_score, average_precision_score
 
-# Task: for each layer in each head compute the divegence score
-# 1. Divide into vision-aware and text-aware samples.
-# 2. For, each samples for a particular head compute the divergence score
-# 3. Compute the difference of divergence score in hallucinated and non-hallucianted samples
-# 4. Plot the visualization in a scatter plot
-# 5. Compute the acuracy
-def compute_connectivity_diff(connectivity, type, t_weight=1, v_weight=-1):
-	return t_weight*connectivity["text"][type]+v_weight*connectivity["visual"][type]
+def select_heads(df, max_heads=25):
+	hallucinating_df, non_hallucinating_df = df[df["label"]].drop(columns=["split", "label"]), df[~df["label"]].drop(columns=["split", "label"])
 
-def compute_normalized_connectivity_diff(samples, t_weight=1, v_weight=-1, type=None):
-	cumulative_connectivity_differences = dict()
+	# compute the distance scrore of train set for all the heads
+	train_distances = hallucinating_df.mean() - non_hallucinating_df.mean()
+	descending_distances_series = train_distances.sort_values(ascending=False)
+	descending_keys = descending_distances_series.index
 
-	# for each layer's head compute the difference of divergence score
-	for i_layer in range(32):
-		for i_head in range(32):
-			key = f"layer_{i_layer}_head_{i_head}"
-			total_head_connectivity_difference = 0
-			
-			# for all the given set of samples compute the divergence score for that head
-			for sample in samples:
-				connectivity_difference = compute_connectivity_diff(sample["connectivity"][key], type, t_weight=t_weight, v_weight=v_weight)
-				total_head_connectivity_difference += connectivity_difference
-
-			cumulative_connectivity_differences[key] = total_head_connectivity_difference/len(samples)
-
-	return dict_to_matrix(cumulative_connectivity_differences)
-
-def dict_to_matrix(dictionary, n_layers=32, n_heads=32):
-	score_array = []
-	for i_layer in range(n_layers):
-		ith_layer_array = []
-		for i_head in range(n_heads):
-			key= f"layer_{i_layer}_head_{i_head}"
-			ith_layer_array.append(dictionary[key])
-
-		score_array.append(ith_layer_array)
-
-	return np.array(score_array)
-
-def get_descending_matrix_indices(matrix):
-	flattened = np.argsort(matrix, axis=None)[::-1]
-	row_col_indices = np.column_stack(np.unravel_index(flattened, matrix.shape))
-
-	return row_col_indices
-
-def select_heads(divergece_matrix, validation_samples, max_heads=10, t_weight=1, v_weight=-1, type=None):
 	n_heads_max = max_heads
-	descending_divergence_heads = get_descending_matrix_indices(divergece_matrix)
 
 	N, N_optimal = 1, 1
 	heads = list()
 
-	p_s = {s: 0 for s in range(len(validation_samples))}
+	p_s = {s: 0 for s in range(len(df))}
 	auc_max = 0.0
 
 	while N<=n_heads_max:
-		heads.append(descending_divergence_heads[N-1])
+		heads.append(descending_keys[N-1])
 
-		for i, s in enumerate(validation_samples):
-			l, h = heads[-1]
-			l, h = int(l), int(h)
+		for i in range(len(df)):
+			s = df.iloc[i]
+			key = heads[-1]
 
-			connectivity = s["connectivity"][f"layer_{l}_head_{h}"]
-			p_s[i] = (N-1)/N * p_s[i] + 1/N * compute_connectivity_diff(connectivity, t_weight=t_weight, v_weight=v_weight, type=type)
+			p_s[i] = (N-1)/N * p_s[i] + 1/N * s[key]
 
-		y_s = [s["is_hallucinating"] for s in validation_samples]
+		y_s = df["label"].values
 		auc = roc_auc_score(y_s, list(p_s.values()))
 
 		if auc > auc_max:
@@ -77,22 +36,19 @@ def select_heads(divergece_matrix, validation_samples, max_heads=10, t_weight=1,
 
 	print(f"Total {N_optimal} heads selected with maximum AUC of {auc_max}")
 	
-	return descending_divergence_heads[:N_optimal], auc_max
+	return heads[:N_optimal], auc_max
 
-def prediction(heads, samples, t_weight=1, v_weight=-1, type=None):
-	y_s = [s["is_hallucinating"] for s in samples]
+def prediction(heads, df):
+	y_s = df["label"].values
 	n_heads = len(heads)
 
 	p_s = []
-	for s in samples:
-		connectivity_diff = 0
-		for (l, h) in heads:
-			key = f"layer_{l}_head_{h}"
-			connectivity_diff += compute_connectivity_diff(s["connectivity"][key], t_weight=t_weight, v_weight=v_weight, type=type)
-
-		p_s.append(connectivity_diff/n_heads)
+	for i in range(len(df)):
+		s = df.iloc[i]
+		p_s.append(s[heads].values.sum()/n_heads)
 
 	auc_score = roc_auc_score(y_s, p_s)
-	print(f"AUC score = {auc_score}")
+	aupr_score = average_precision_score(y_s, p_s)
+	print(f"AUC score = {auc_score}, AUPR score = {aupr_score}")
 
-	return auc_score
+	return auc_score, aupr_score
