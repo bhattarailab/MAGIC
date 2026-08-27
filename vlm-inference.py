@@ -191,10 +191,7 @@ def process_weights(model, processor, image_processor, context_len, image, quest
                 text_subgraphs[layer_idx].append(text_submat)
 
         # for the embedding of each token
-        token_embeddings = {}
-        for layer_idx in range(layers):
-            layer_embedding = output.hidden_states[layer_idx][0].detach().cpu().numpy()
-            token_embeddings[layer_idx] = layer_embedding
+        token_embeddings = output.hidden_states[layer_idx][0].detach().cpu().numpy()
 
         attention = [attn[0].cpu().numpy() for attn in output.attentions]
         prompt_len = input_ids.shape[-1]
