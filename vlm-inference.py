@@ -6,21 +6,6 @@ import numpy as np
 import torch
 from datasets import load_dataset
 from dotenv import load_dotenv
-from llava.constants import (
-    DEFAULT_IMAGE_TOKEN,
-    IMAGE_TOKEN_INDEX,
-)
-from llava.conversation import conv_templates
-from llava.mm_utils import (
-    get_model_name_from_path,
-    process_images,
-    tokenizer_image_token,
-)
-from llava.model.builder import load_pretrained_model
-from transformers import (
-    AutoModelForImageTextToText,
-    AutoProcessor,
-)
 
 from magic.save import save_results
 from magic.utils import clear_cuda, load_image
@@ -33,6 +18,11 @@ BASE_SAVE_PATH = Path(os.getenv("BASE_SAVE_DIR"))
 
 def load_models(model_name):
     if model_name == "llava-med-v1.5-mistral-7b":
+        from llava.mm_utils import (
+            get_model_name_from_path,
+        )
+        from llava.model.builder import load_pretrained_model
+
         model_name = get_model_name_from_path("microsoft/llava-med-v1.5-mistral-7b")
         tokenizer, model, image_processor, context_len = load_pretrained_model(
             model_path="microsoft/llava-med-v1.5-mistral-7b",
@@ -42,6 +32,11 @@ def load_models(model_name):
         )
         return model, tokenizer, image_processor, context_len
     if model_name == "medgemma-4b-it":
+        from transformers import (
+            AutoModelForImageTextToText,
+            AutoProcessor,
+        )
+
         model = AutoModelForImageTextToText.from_pretrained(
             "google/medgemma-4b-it",
             torch_dtype=torch.bfloat16,
@@ -52,13 +47,22 @@ def load_models(model_name):
         return model, processor, None, None
 
 
-def process_image(image, image_processor):
+def process_image_for_llava(image, image_processor):
+    from llava.mm_utils import (
+        process_images,
+    )
+
     args = {"image_aspect_ratio": "pad"}
     image_tensor = process_images([image], image_processor, args)
     return image_tensor.to(model.device, dtype=torch.float16)
 
 
 def create_prompt(prompt: str):
+    from llava.constants import (
+        DEFAULT_IMAGE_TOKEN,
+    )
+    from llava.conversation import conv_templates
+
     CONV_MODE = "llava_v0"
     conv = conv_templates[CONV_MODE].copy()
     roles = conv.roles
@@ -118,7 +122,14 @@ def get_token_type_indices(input_ids, generated_ids, attention_seq_len, image_to
 
 def process_weights(model, processor, image_processor, context_len, image, question):
     if model_name == "llava-med-v1.5-mistral-7b":
-        image_tensor = process_image(image, image_processor)
+        from llava.constants import (
+            IMAGE_TOKEN_INDEX,
+        )
+        from llava.mm_utils import (
+            tokenizer_image_token,
+        )
+
+        image_tensor = process_image_for_llava(image, image_processor)
         prompt, _ = create_prompt(question)
         input_ids = (
             tokenizer_image_token(prompt, processor, IMAGE_TOKEN_INDEX, return_tensors="pt")
@@ -282,7 +293,9 @@ def process_dataset(
     """
     import time
 
-    save_folder = BASE_SAVE_PATH/model_name/split/f"{dataset.split('/')[-1]}-{from_index}-{to_index}"
+    save_folder = (
+        BASE_SAVE_PATH / model_name / split / f"{dataset.split('/')[-1]}-{from_index}-{to_index}"
+    )
     os.makedirs(save_folder, exist_ok=True)
     dataset = load_dataset(dataset, split=split)
     n_dataset = len(dataset)
