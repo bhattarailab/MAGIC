@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from datasets import load_dataset
-from dotenv import load_env
+from dotenv import load_dotenv
 from llava.constants import (
     DEFAULT_IMAGE_TOKEN,
     IMAGE_TOKEN_INDEX,
@@ -25,7 +25,7 @@ from transformers import (
 from magic.save import save_results
 from magic.utils import clear_cuda, load_image
 
-load_env()
+load_dotenv()
 clear_cuda()
 
 BASE_SAVE_PATH = Path(os.getenv("BASE_SAVE_DIR"))
@@ -119,7 +119,7 @@ def get_token_type_indices(input_ids, generated_ids, attention_seq_len, image_to
 def process_weights(model, processor, image_processor, context_len, image, question):
     if model_name == "llava-med-v1.5-mistral-7b":
         image_tensor = process_image(image, image_processor)
-        prompt, conv = create_prompt(question)
+        prompt, _ = create_prompt(question)
         input_ids = (
             tokenizer_image_token(prompt, processor, IMAGE_TOKEN_INDEX, return_tensors="pt")
             .unsqueeze(0)
@@ -135,6 +135,7 @@ def process_weights(model, processor, image_processor, context_len, image, quest
                 output = model(
                     generated_ids,
                     output_attentions=True,
+                    output_hidden_states=True,
                     images=image_tensor.unsqueeze(0).half().cuda(),
                     use_cache=True,
                 )
@@ -153,6 +154,7 @@ def process_weights(model, processor, image_processor, context_len, image, quest
         indices = get_token_type_indices(
             input_ids=input_ids, generated_ids=generated_ids, attention_seq_len=attention_seq_len
         )
+
         answer_token_indices = indices["answer_token_indices"]
         text_token_indices = indices["text_token_indices"]
         visual_token_indices = indices["visual_token_indices"]
