@@ -9,9 +9,10 @@ import torch
 from PIL import Image
 from transformers import set_seed as hf_set_seed
 
+
 def load_image(path: str):
     """
-      Loads the image from given path
+    Loads the image from given path
     """
     with Image.open(path) as img:
         return img.convert("RGB")
@@ -19,7 +20,7 @@ def load_image(path: str):
 
 def clear_cuda():
     """
-      Clears the cache from CUDA
+    Clears the cache from CUDA
     """
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -29,7 +30,7 @@ def clear_cuda():
 
 def all_seed(seed=42):
     """
-      Setting SEED across all random number generators for reproducible experiments
+    Setting SEED across all random number generators for reproducible experiments
     """
     os.environ["PYTHONHASHSEED"] = str(seed)
 
@@ -45,7 +46,7 @@ def all_seed(seed=42):
 
 def image_to_base64(image_path_or_pil):
     """
-      Converts a PIL Image or image path to a base64 string suitable for VLM input.
+    Converts a PIL Image or image path to a base64 string suitable for VLM input.
     """
     if isinstance(image_path_or_pil, str):
         img = Image.open(image_path_or_pil).convert("RGB")

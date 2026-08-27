@@ -11,9 +11,10 @@ import torch
 from datasets import load_dataset
 
 from magic.save import save_results
-from magic.utils import clear_cuda, load_image
+from magic.utils import all_seed, clear_cuda, load_image
 
 clear_cuda()
+all_seed()
 
 BASE_SAVE_PATH = Path(os.getenv("BASE_SAVE_DIR"))
 
@@ -188,6 +189,13 @@ def process_weights(model, processor, image_processor, context_len, image, quest
                 text_submat = attn[np.ix_(answer_token_indices, text_token_indices)]
                 visual_subgraphs[layer_idx].append(visual_submat)
                 text_subgraphs[layer_idx].append(text_submat)
+
+        # for the embedding of each token
+        token_embeddings = {}
+        for layer_idx in range(layers):
+            layer_embedding = output.hidden_states[layer_idx][0].detach().cpu().numpy()
+            token_embeddings[layer_idx] = layer_embedding
+
         attention = [attn[0].cpu().numpy() for attn in output.attentions]
         prompt_len = input_ids.shape[-1]
         answer_ids = generated_ids[0][prompt_len:]
@@ -201,6 +209,7 @@ def process_weights(model, processor, image_processor, context_len, image, quest
             visual_token_indices,
             text_token_indices,
             answer_token_indices,
+            token_embeddings,
             None,
         )
 
@@ -231,6 +240,7 @@ def process_weights(model, processor, image_processor, context_len, image, quest
                 input_ids=full_sequence,
                 pixel_values=inputs.get("pixel_values"),
                 output_attentions=True,
+                output_hidden_states=True,
                 use_cache=False,
             )
 
@@ -326,13 +336,16 @@ def process_dataset(
             viusal_token_indices,
             text_token_indices,
             answer_token_indices,
+            token_embeddings,
             sequence,
         ) = process_weights(model, processor, image_processor, context_len, image, pope_prompt)
         end = time.perf_counter()
         attention_file = f"{save_folder}/attention_{idx}.npz"
         visual_file = f"{save_folder}/visual_subgraphs_{idx}.npz"
         text_file = f"{save_folder}/text_subgraphs_{idx}.npz"
+        embedding_file = f"{save_folder}/embedding_{idx}.npz"
         visual_arrays = {}
+
         for layer_idx, heads in visual_subgraphs.items():
             for head_idx, submat in enumerate(heads):
                 visual_arrays[f"layer_{layer_idx}_head_{head_idx}"] = submat
@@ -351,6 +364,7 @@ def process_dataset(
         print(f"Model answer: {answer}")
 
         np.savez_compressed(attention_file, attention_tensor)
+        np.savez_compressed(embedding_file, token_embeddings)
         results.append(
             {
                 "question": pope_prompt,
@@ -360,8 +374,9 @@ def process_dataset(
                 "visual_subgraphs": visual_file,
                 "text_subgraphs": text_file,
                 "attention_file": attention_file,
+                "embedding_file": embedding_file,
                 "visual_indices": viusal_token_indices,
-                "test_indices": text_token_indices,
+                "text_indices": text_token_indices,
                 "answer_indices": answer_token_indices,
                 "sequence": sequence,
             }
