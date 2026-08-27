@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
+
 import argparse
 import os
 from pathlib import Path
@@ -5,12 +9,10 @@ from pathlib import Path
 import numpy as np
 import torch
 from datasets import load_dataset
-from dotenv import load_dotenv
 
 from magic.save import save_results
 from magic.utils import clear_cuda, load_image
 
-load_dotenv()
 clear_cuda()
 
 BASE_SAVE_PATH = Path(os.getenv("BASE_SAVE_DIR"))
