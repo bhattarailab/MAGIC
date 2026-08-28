@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import numpy as np
 import seaborn as sns
 
@@ -57,9 +58,24 @@ def main(metadata):
         visual_attention_submatrix = np.load(item["visual_subgraphs_file"])
         middle_visual_submtrix = visual_attention_submatrix["layer_10_head_10"]    # (text tokens, visual tokens)
         mean_attention_matrix = middle_visual_submtrix.mean(axis=0)
+        sink_token_masks = norms_across_layers[10] > 150
+
+        # findng the average attention in sink and non-sink tokens
+        sink_tokens_attention = mean_attention_matrix[sink_token_masks].mean()
+        non_sink_tokens_attention = mean_attention_matrix[~sink_token_masks].mean()
+        print(f"Sink tokens = {sink_tokens_attention:.4f}, non-sink = {non_sink_tokens_attention:.4f}")
 
         # plot the heatmap of attention matrix
-        sns.heatmap(mean_attention_matrix.reshape(24, 24), square=True, cbar=True, xticklabels=False, yticklabels=False)
+        _, ax = plt.subplots(figsize=(8, 8))
+        sns.heatmap(mean_attention_matrix.reshape(24, 24), square=True, cbar=True, xticklabels=False, yticklabels=False, ax=ax)
+
+        for row in range(24):
+            for col in range(24):
+                if sink_token_masks[row, col]:
+                    ax.add_patch(Rectangle(
+                        (col, row), 1, 1,
+                        fill=False, edgecolor='blue', linewidth=2
+                    ))
         plt.title("Mean attention heatmap for visual tokens for output tokens")
         plt.savefig("./outputs/shift-registers/attention-heatmap.png")
         plt.close()
