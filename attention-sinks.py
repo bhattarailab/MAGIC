@@ -19,7 +19,7 @@ def get_visual_embeddings(embeddings, visual_indices):
 
     # isolating the visual embeddings only
     visual_embeddings = embeddings[:, visual_indices, :]
-    return visual_embeddings
+    return visual_embeddings.astype(np.float32)
 
 
 def main(metadata):
@@ -45,10 +45,10 @@ def main(metadata):
         plt.close()
 
         # heatmap to identify the position of visual sink tokens
-        for i_layer, norms in enumerate(norms_across_layers):
+        for i_layer in range(n_layers):
             # reshape the norms into square matrix
-            norms = norms.reshape(24, 24)
-            sns.heatmap(norms, square=True, cbar=True, xticklabels=False, yticklabels=False)
+            norms_2d = norms_across_layers[i_layer].reshape(24, 24)
+            sns.heatmap(norms_2d, square=True, cbar=True, xticklabels=False, yticklabels=False)
             plt.title(f"Visual token norms' heatmap for L={i_layer}")
             plt.savefig(f"./outputs/shift-registers/norm-heatmap-{i_layer}.png")
             plt.close()
