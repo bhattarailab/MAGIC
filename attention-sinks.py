@@ -1,34 +1,63 @@
+import os
 import pickle as pkl
 from argparse import ArgumentParser
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
 
 def get_visual_embeddings(embeddings, visual_indices):
     """
-    embeddinggs = (L, s, 4096) where L = number of layers
+    embeddings = (L+1, s, 4096) where L = number of layers, L+1 because the first one contains the initial embedding
+
+    output = (L, 576, 4096) where 576 is number of visual tokens
     """
-    print(embeddings["arr_0"])
-    breakpoint()
+    # initial_embeddings = embeddings[0]
+    embeddings = embeddings[1:]
+
+    # isolating the visual embeddings only
+    visual_embeddings = embeddings[:, visual_indices, :]
+    return visual_embeddings
 
 
 def main(metadata):
     for item in metadata:
         embedding_file, visual_indices = item["embedding_file"], item["visual_indices"]
-        embedding = np.load(embedding_file)
+        embedding = np.load(embedding_file)["arr_0"]
 
-        get_visual_embeddings(embedding, visual_indices)
+        visual_embeddings = get_visual_embeddings(embedding, visual_indices)
+
+        # compute the L2 norm for each token embeddings (SHIFT REGSITERS PAPER)
+        norms_across_layers = np.linalg.norm(visual_embeddings, 2, axis=2) # (32, 576)
+
+        # scatter plot between the layer and norm of visual tokens
+        sns.scatterplot(
+            x=np.repeat(np.arange(norms_across_layers.shape[0]), norms_across_layers.shape[1]),
+            y=norms_across_layers.flatten(),
+        )
+        plt.xlabel("Layers")
+        plt.ylabel("Norms")
+        plt.title("Visualization of visual tokens' norms across layers")
+        plt.savefig("./outputs/shift-registers/scatter.png")
+        plt.close()
+
+        breakpoint()
 
 
 if __name__ == "__main__":
+    # create the output directories if not exists
+    os.makedirs("./outputs", exist_ok=True)
+    os.makedirs("./outputs/shift-registers", exist_ok=True)
+
     parser = ArgumentParser(description="Scripts to perform experiments on shift registers")
     parser.add_argument("--input", "-i", required=True, help="Input path")
 
     args = parser.parse_args()
     input_path = Path(args.input)
 
-    with open(input_path/"metadata.pkl", "rb") as file:
+    with open(input_path / "metadata.pkl", "rb") as file:
         metadata = pkl.load(file)
 
     main(metadata)
