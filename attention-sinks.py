@@ -63,7 +63,7 @@ def main(metadata):
         # findng the average attention in sink and non-sink tokens
         sink_tokens_attention = mean_attention_matrix[sink_token_masks].mean()
         non_sink_tokens_attention = mean_attention_matrix[~sink_token_masks].mean()
-        print(f"Sink tokens = {sink_tokens_attention:.4f}, non-sink = {non_sink_tokens_attention:.4f}")
+        print(f"Sink tokens = {sink_tokens_attention}, non-sink = {non_sink_tokens_attention}")
 
         # plot the heatmap of attention matrix
         _, ax = plt.subplots(figsize=(8, 8))
@@ -71,7 +71,7 @@ def main(metadata):
 
         for row in range(24):
             for col in range(24):
-                if sink_token_masks[row, col]:
+                if sink_token_masks.reshape(24, 24)[row, col]:
                     ax.add_patch(Rectangle(
                         (col, row), 1, 1,
                         fill=False, edgecolor='blue', linewidth=2
