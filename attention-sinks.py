@@ -74,7 +74,7 @@ def main(metadata):
                 if sink_token_masks.reshape(24, 24)[row, col]:
                     ax.add_patch(Rectangle(
                         (col, row), 1, 1,
-                        fill=False, edgecolor='blue', linewidth=2
+                        fill=False, edgecolor='green', linewidth=2
                     ))
         plt.title("Mean attention heatmap for visual tokens for output tokens")
         plt.savefig("./outputs/shift-registers/attention-heatmap.png")
