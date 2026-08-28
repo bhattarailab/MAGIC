@@ -53,6 +53,16 @@ def main(metadata):
             plt.savefig(f"./outputs/shift-registers/norm-heatmap-{i_layer}.png")
             plt.close()
 
+        # visual attention map and similarity with sink tokens
+        visual_attention_submatrix = np.load(item["visual_subgraphs_file"])
+        middle_visual_submtrix = visual_attention_submatrix["layer_10_head_10"]    # (text tokens, visual tokens)
+        mean_attention_matrix = middle_visual_submtrix.mean(axis=0)
+
+        # plot the heatmap of attention matrix
+        sns.heatmap(mean_attention_matrix.reshape(24, 24), square=True, cbar=True, xticklabels=False, yticklabels=False)
+        plt.title("Mean attention heatmap for visual tokens for output tokens")
+        plt.savefig("./outputs/shift-registers/attention-heatmap.png")
+        plt.close()
         breakpoint()
 
 
