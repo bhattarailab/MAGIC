@@ -30,11 +30,12 @@ def main(metadata):
         visual_embeddings = get_visual_embeddings(embedding, visual_indices)
 
         # compute the L2 norm for each token embeddings (SHIFT REGSITERS PAPER)
-        norms_across_layers = np.linalg.norm(visual_embeddings, 2, axis=2) # (32, 576)
+        norms_across_layers = np.linalg.norm(visual_embeddings, 2, axis=2)  # (32, 576)
+        n_layers, n_visual_tokens = norms_across_layers.shape[0], norms_across_layers.shape[1]
 
         # scatter plot between the layer and norm of visual tokens
         sns.scatterplot(
-            x=np.repeat(np.arange(norms_across_layers.shape[0]), norms_across_layers.shape[1]),
+            x=np.repeat(np.arange(n_layers), n_visual_tokens),
             y=norms_across_layers.flatten(),
         )
         plt.xlabel("Layers")
@@ -42,6 +43,15 @@ def main(metadata):
         plt.title("Visualization of visual tokens' norms across layers")
         plt.savefig("./outputs/shift-registers/scatter.png")
         plt.close()
+
+        # heatmap to identify the position of visual sink tokens
+        for i_layer, norms in enumerate(norms_across_layers):
+            # reshape the norms into square matrix
+            norms = norms.reshape(24, 24)
+            sns.heatmap(norms, square=True, cbar=True, xticklabels=False, yticklabels=False)
+            plt.title(f"Visual token norms' heatmap for L={i_layer}")
+            plt.savefig(f"./outputs/shift-registers/norm-heatmap-{i_layer}.png")
+            plt.close()
 
         breakpoint()
 
