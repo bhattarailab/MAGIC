@@ -96,7 +96,12 @@ def process_metadata_pickle(metadata, mask_sink_attention, mode, n_workers):
 
 
 def metadata_to_dataset(metadata):
-    X = np.array([list(v.values()) for meta in metadata for v in meta["connectivity"].values()])
+    X = np.array(
+        [
+            [value for v in meta["connectivity"].values() for value in v.values()]
+            for meta in metadata
+        ]
+    )
     y = np.array([meta["is_hallucinating"] for meta in metadata])
 
     return X, y
