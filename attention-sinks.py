@@ -19,8 +19,6 @@ def get_visual_embeddings(embeddings, visual_indices):
 
 
 def main(metadata, output_path):
-    updated_metadata = []
-
     for item in metadata:
         embedding_file, visual_indices = item["embedding_file"], item["visual_indices"]
         embedding = np.load(embedding_file)["arr_0"]
@@ -33,15 +31,10 @@ def main(metadata, output_path):
         # thresholding the norms for sink token masks
         sink_token_masks = norms_across_layers > 150
         sink_tokens_indices = [list(np.where(row)[0]) for row in sink_token_masks]
-        updated_metadata.append(
-            {
-                **metadata,
-                "sink_tokens_indices": sink_tokens_indices,
-            }
-        )
+        item["sink_tokens_indices"] = sink_tokens_indices,
 
     with open(output_path, "wb") as file:
-        pkl.dump(updated_metadata, file)
+        pkl.dump(metadata, file)
 
 
 if __name__ == "__main__":
