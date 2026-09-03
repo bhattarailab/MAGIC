@@ -2,6 +2,7 @@ import pickle as pkl
 from argparse import ArgumentParser
 
 import numpy as np
+from tqdm import tqdm
 
 
 def get_visual_embeddings(embeddings, visual_indices):
@@ -19,7 +20,7 @@ def get_visual_embeddings(embeddings, visual_indices):
 
 
 def main(metadata, output_path):
-    for item in metadata:
+    for item in tqdm(metadata):
         embedding_file, visual_indices = item["embedding_file"], item["visual_indices"]
         embedding = np.load(embedding_file)["arr_0"]
 
