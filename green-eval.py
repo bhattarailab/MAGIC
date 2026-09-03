@@ -1,5 +1,6 @@
 import argparse
 import pickle
+from tqdm import tqdm
 
 import pandas as pd
 from green_score import GREEN
@@ -18,18 +19,17 @@ def main(input_path, output_path):
     refs = [f"{questions[i]} {refs[i]}" for i in range(len(refs))]
     candidates = [f"{questions[i]} {candidates[i]}" for i in range(len(refs))]
 
-    green_scorer = GREEN(GREEN_MODEL_ID, output_dir="./outputs")
+    green_scorer = GREEN(GREEN_MODEL_ID, output_dir="./outputs", compute_summary_stats=False)
 
     N = len(questions)
     green_evaluations = []
     # for each batch
-    for i in range(N):
+    for i in tqdm(range(N)):
         refs_sample, candidates_sample = [refs[i]], [candidates[i]]
         output = green_scorer(refs_sample, candidates_sample)
 
         rows = output[4].to_dict("records")
         green_evaluations.extend(rows)
-        print(f"Completed {i}")
 
     df = pd.DataFrame(green_evaluations)
 

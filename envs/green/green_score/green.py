@@ -39,7 +39,7 @@ def is_main_process():
 
 def tqdm_on_main(*args, **kwargs):
     if is_main_process():
-        print("==== Beginning Inference ====")
+        # print("==== Beginning Inference ====")
         return tqdm(*args, **kwargs)
     else:
         return kwargs.get("iterable", None)
@@ -120,14 +120,14 @@ class GREEN:
         self.compute_summary_stats = compute_summary_stats
 
     def __call__(self, refs, hyps):
-        if is_main_process():
-            print("Processing data...making prompts")
+        # if is_main_process():
+        #     print("Processing data...making prompts")
 
         dataset = Dataset.from_dict({"reference": refs, "prediction": hyps})
 
         dataset = self.process_data(dataset)
-        if is_main_process():
-            print("Done.")
+        # if is_main_process():
+        #     print("Done.")
 
         self.dataset = dataset
 
@@ -136,8 +136,8 @@ class GREEN:
         mean, std, green_scores, summary, results_df = self.infer()
 
         t = time.time() - t
-        if is_main_process():
-            print("Seconds per example: ", t / len(refs))
+        # if is_main_process():
+        #     print("Seconds per example: ", t / len(refs))
 
         if not is_main_process():
             print(f"Rank {dist.get_rank()} exiting.")
@@ -190,11 +190,11 @@ class GREEN:
             self.completions = local_completions
             self.prompts = local_references
 
-        if is_main_process():
-            print("==== End Inference ====")
+        # if is_main_process():
+        #     print("==== End Inference ====")
 
-        if len(self.completions) != len(self.prompts):
-            print("Length of prompts and completions are not equal!")
+        # if len(self.completions) != len(self.prompts):
+        #     print("Length of prompts and completions are not equal!")
 
         return self.process_results()
 
@@ -414,7 +414,7 @@ class GREEN:
         return dict_acc
 
     def compute_summary(self):
-        print("Computing summary ...")
+        # print("Computing summary ...")
         representative_sentences = self.get_representative_sentences(self.completions)
         accuracies = self.compute_accuracy(self.completions)
         mean = np.mean(self.green_scores)
