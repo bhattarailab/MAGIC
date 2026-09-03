@@ -24,7 +24,7 @@ def main(input_path, output_path):
     N = len(questions)
     green_evaluations = []
     # for each batch
-    for i in tqdm(range(N)):
+    for i in tqdm(range(N), total=N):
         refs_sample, candidates_sample = [refs[i]], [candidates[i]]
         output = green_scorer(refs_sample, candidates_sample)
 
