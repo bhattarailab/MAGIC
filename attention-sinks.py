@@ -1,8 +1,15 @@
+import os
 import pickle as pkl
 from argparse import ArgumentParser
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 from tqdm import tqdm
+
+# multiprocessing boost
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 
 def get_visual_embeddings(embeddings, visual_indices):
@@ -19,20 +26,33 @@ def get_visual_embeddings(embeddings, visual_indices):
     return visual_embeddings.astype(np.float32)
 
 
-def main(metadata, output_path):
-    for item in tqdm(metadata):
-        embedding_file, visual_indices = item["embedding_file"], item["visual_indices"]
-        embedding = np.load(embedding_file)["arr_0"]
+def process_item(args):
+    i, item = args
 
-        visual_embeddings = get_visual_embeddings(embedding, visual_indices)
+    embedding_file, visual_indices = item["embedding_file"], item["visual_indices"]
+    embedding = np.load(embedding_file)["arr_0"]
 
-        # compute the L2 norm for each token embeddings (SHIFT REGSITERS PAPER)
-        norms_across_layers = np.linalg.norm(visual_embeddings, 2, axis=2)  # (32, 576)
+    visual_embeddings = get_visual_embeddings(embedding, visual_indices)
 
-        # thresholding the norms for sink token masks
-        sink_token_masks = norms_across_layers > 150
-        sink_tokens_indices = [list(np.where(row)[0]) for row in sink_token_masks]
-        item["sink_tokens_indices"] = sink_tokens_indices,
+    # compute the L2 norm for each token embeddings (SHIFT REGSITERS PAPER)
+    norms_across_layers = np.linalg.norm(visual_embeddings, 2, axis=2)  # (32, 576)
+
+    # thresholding the norms for sink token masks
+    sink_token_masks = norms_across_layers > 150
+    sink_tokens_indices = [list(np.where(row)[0]) for row in sink_token_masks]
+
+    return i, sink_tokens_indices
+
+
+def main(metadata, output_path, n_workers):
+    tasks = [(i, item) for i, item in enumerate(metadata)]
+
+    with ProcessPoolExecutor(max_workers=n_workers) as executor:
+        futures = [executor.submit(process_item, t) for t in tasks]
+
+        for fut in tqdm(as_completed(futures), total=len(futures), desc="Items"):
+            i, sink_token_indices = fut.result()
+            metadata[i]["sink_tokens_indices"] = sink_token_indices
 
     with open(output_path, "wb") as file:
         pkl.dump(metadata, file)
@@ -48,6 +68,7 @@ if __name__ == "__main__":
         help="output pickle path if not then input pickle will be overwritten",
         default=None,
     )
+    parser.add_argument("--n-workers", type=int, default=4)
 
     args = parser.parse_args()
 
@@ -55,4 +76,8 @@ if __name__ == "__main__":
     with open(args.input, "rb") as fp:
         metadata = pkl.load(fp)
 
-    main(metadata=metadata, output_path=args.output if args.output is not None else args.input)
+    main(
+        metadata=metadata,
+        output_path=args.output if args.output is not None else args.input,
+        n_workers=args.n_workers,
+    )
