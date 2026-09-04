@@ -61,7 +61,7 @@ def process_sample(args):
                     # mask the visual sink tokens if required
                     if mask_sink_tokens:
                         visual_matrix = np.delete(
-                            visual_matrix, meta["sink_tokens_indices"], axis=1
+                            visual_matrix, meta["sink_tokens_indices"][layer], axis=1
                         )
 
                     # extracting the connectivity value for text and visual

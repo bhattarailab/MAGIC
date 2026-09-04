@@ -30,7 +30,10 @@ def process_item(args):
     i, item = args
 
     embedding_file, visual_indices = item["embedding_file"], item["visual_indices"]
-    embedding = np.load(embedding_file)["arr_0"]
+    try:
+      embedding = np.load(embedding_file)["arr_0"]
+    except Exception as e:
+      raise RuntimeError(f"Fialed to load embedding file: {embedding_file}") from e
 
     visual_embeddings = get_visual_embeddings(embedding, visual_indices)
 
